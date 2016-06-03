@@ -8,12 +8,12 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Interval;
 
 import gurobi.GRBException;
-import model.Pair;
 import model.StateAction;
 import state_representation.DefaultCapacityComparer;
 import state_representation.DefaultState;
@@ -47,7 +47,7 @@ public class DirectMHDynModel implements StateAction<DefaultState> {
 	public DefaultState act(DefaultState state, FlightHandler flightHandler, Duration timeStep) throws Exception {
 		Interval gdpInterval = myIntervalChooser.apply(state);
 		List<Flight> sittingFlights = new ArrayList<Flight>(state.getFlightState().getSittingFlights());
-		List<Pair<Integer, Integer>> discretizedFlights = GDPPlanningHelper.discretizeFlights(sittingFlights,
+		List<ImmutablePair<Integer, Integer>> discretizedFlights = GDPPlanningHelper.discretizeFlights(sittingFlights,
 				timePeriodDuration, state.getCurrentTime());
 		List<Integer> exemptFlights = GDPPlanningHelper.aggregateFlightCountsByFlightTimeField(
 				state.getFlightState().getAirborneFlights(), timePeriodDuration, gdpInterval, Flight.depETAFieldID);

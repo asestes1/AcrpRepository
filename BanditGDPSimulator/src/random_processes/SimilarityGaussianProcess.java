@@ -27,7 +27,8 @@ import function_util.MatrixHelper;
 public class SimilarityGaussianProcess {
 	private int numPoints;
 	private final Function<SimpleTmiAction,Double> meanFunction;
-	private final BiFunction<SimpleTmiAction,SimpleTmiAction,Double> covarianceFunction; 
+	private final BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmiSimilarityFunction;
+	private final double varScaleFactor;
 	/* The keys are points which have been evaluated. The value is the
 	 * observed value of that point */ 
 	private List<SimpleTmiAction> evaluatedPoints;
@@ -45,11 +46,12 @@ public class SimilarityGaussianProcess {
 	public SimilarityGaussianProcess(SimilarityGaussianProcess other){
 		this.numPoints = other.numPoints;
 		this.meanFunction = other.meanFunction;
-		this.covarianceFunction = other.covarianceFunction;
+		this.tmiSimilarityFunction = other.tmiSimilarityFunction;
 		this.evaluatedPoints = new ArrayList<SimpleTmiAction>(other.evaluatedPoints);
 		this.values = new ArrayList<Double>(other.values);
 		this.precision = other.precision.copy();
 		this.error = other.error.copy();
+		this.varScaleFactor = other.varScaleFactor;
 	}
 	
 	/**
@@ -60,9 +62,11 @@ public class SimilarityGaussianProcess {
 	 * @param correlation_function - This function should be symmetric.
 	 */
 	public SimilarityGaussianProcess(Function<SimpleTmiAction,Double> mean_function,
-			BiFunction<SimpleTmiAction,SimpleTmiAction,Double> correlation_function){
+			BiFunction<SimpleTmiAction,SimpleTmiAction,Double> correlation_function,
+			double varScaleFactor){
 		this.meanFunction = mean_function;
-		this.covarianceFunction = correlation_function;
+		this.tmiSimilarityFunction = correlation_function;
+		this.varScaleFactor = varScaleFactor;
 		//We start with no evaluated points
 		evaluatedPoints = new ArrayList<SimpleTmiAction>();
 		values = new ArrayList<Double>();
@@ -81,14 +85,14 @@ public class SimilarityGaussianProcess {
 	public double evaluate(SimpleTmiAction vector,RealVector similarity){
 		if(numPoints==0){
 			double mean = meanFunction.apply(vector);
-			double var = covarianceFunction.apply(vector,vector);
+			double var = tmiSimilarityFunction.apply(vector,vector);
 			double drawn_value = new NormalDistribution(mean,Math.sqrt(var)).sample();
 			return drawn_value;
 		}
 		//These are the calculations for the posterior mean and variance,
 		//given the points that were already evaluated.
 		double prior_mean = meanFunction.apply(vector);
-		double prior_var = covarianceFunction.apply(vector,vector);
+		double prior_var = tmiSimilarityFunction.apply(vector,vector);
 		RealVector v_cov = findCov(vector,similarity);
 		RealVector pre_cov = precision.preMultiply(v_cov);
 		double post_mean = prior_mean+pre_cov.dotProduct(error);
@@ -157,7 +161,7 @@ public class SimilarityGaussianProcess {
 	 */
 	private void updatePrecision(SimpleTmiAction vector, RealVector similarities){
 		//Find the variance at the new point
-		double var = covarianceFunction.apply(vector,vector);
+		double var = varScaleFactor*tmiSimilarityFunction.apply(vector,vector);
 		if(numPoints == 0){
 			precision = new BlockRealMatrix(1,1);
 			precision.setEntry(0, 0, 1/var);
@@ -203,7 +207,7 @@ public class SimilarityGaussianProcess {
 		int count = 0;
 		double[] cov_values = new double[numPoints];
 		while(my_iter.hasNext()){
-			cov_values[count] = covarianceFunction.apply(vector,my_iter.next())*
+			cov_values[count] = varScaleFactor*tmiSimilarityFunction.apply(vector,my_iter.next())*
 					similarities.getEntry(count);
 			count++;
 		}
@@ -216,6 +220,7 @@ public class SimilarityGaussianProcess {
 		}else{
 			double prior_mean = meanFunction.apply(vector);
 			RealVector v_cov = findCov(vector,similarities);
+			
 			RealVector pre_cov = precision.preMultiply(v_cov);
 			return prior_mean+pre_cov.dotProduct(error);
 		}
@@ -224,7 +229,7 @@ public class SimilarityGaussianProcess {
 	public Double postCov(SimpleTmiAction vector_1, SimpleTmiAction vector_2, RealVector similarities){
 			RealVector v1_cov = findCov(vector_1,similarities);
 			RealVector v2_cov = findCov(vector_2,similarities);
-			double prior_cov = covarianceFunction.apply(vector_1,vector_2);
+			double prior_cov = tmiSimilarityFunction.apply(vector_1,vector_2);
 			return prior_cov -  v2_cov.dotProduct(precision.preMultiply(v1_cov));
 	}
 
@@ -253,7 +258,7 @@ public class SimilarityGaussianProcess {
 	}
 
 	public BiFunction<SimpleTmiAction, SimpleTmiAction, Double> getCovarianceFunction() {
-		return covarianceFunction;
+		return tmiSimilarityFunction;
 	}
 	
 	

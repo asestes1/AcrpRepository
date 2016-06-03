@@ -29,6 +29,8 @@ public class GpGreedySolver extends GpIndexSolver{
 			if(!my_indices.containsKey(next_action)){
 				double estimated_value = 
 						myProcess.postMean(next_action, similarities);
+				//System.out.println(next_action);
+				//System.out.println(estimated_value);
 				my_indices.put(next_action, estimated_value);
 			}		
 		}

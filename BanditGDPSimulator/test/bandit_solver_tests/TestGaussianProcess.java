@@ -63,7 +63,7 @@ public class TestGaussianProcess {
 		Function<SimpleTmiAction,Double> zero_prior = new ConstantFunction();
 		BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmi_action = 
 				GaussianTmiComparerFactory.makeDefaultTmiComparer();
-		SimilarityGaussianProcess my_sim_proc = new SimilarityGaussianProcess(zero_prior,tmi_action);
+		SimilarityGaussianProcess my_sim_proc = new SimilarityGaussianProcess(zero_prior,tmi_action,1.0);
 
 		int num_evaluations = 100; 
 		GaussianKernel my_kernel = new GaussianKernel(1.0, 1);
@@ -121,7 +121,7 @@ public class TestGaussianProcess {
 		Function<SimpleTmiAction,Double> zero_prior = new ConstantFunction();
 		BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmi_action = 
 				GaussianTmiComparerFactory.makeDefaultTmiComparer();
-		SimilarityGaussianProcess my_sim_proc = new SimilarityGaussianProcess(zero_prior,tmi_action);
+		SimilarityGaussianProcess my_sim_proc = new SimilarityGaussianProcess(zero_prior,tmi_action,1.0);
 
 		GaussianKernel my_kernel = new GaussianKernel(1.0, 1);
 		List<RealVector> my_states = new ArrayList<RealVector>();
@@ -178,7 +178,7 @@ public class TestGaussianProcess {
 		Function<SimpleTmiAction,Double> zero_prior = new ConstantFunction();
 		BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmi_action = 
 				GaussianTmiComparerFactory.makeDefaultTmiComparer();
-		SimilarityGaussianProcess my_sim_proc = new SimilarityGaussianProcess(zero_prior,tmi_action);
+		SimilarityGaussianProcess my_sim_proc = new SimilarityGaussianProcess(zero_prior,tmi_action,1.0);
 
 		GaussianKernel my_kernel = new GaussianKernel(1.0, 1);
 		List<RealVector> my_states = new ArrayList<RealVector>();
@@ -234,7 +234,7 @@ public class TestGaussianProcess {
 		Function<SimpleTmiAction,Double> zero_prior = new ConstantFunction();
 		BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmi_action = 
 				GaussianTmiComparerFactory.makeDefaultTmiComparer();
-		SimilarityGaussianProcess my_sim_proc = new SimilarityGaussianProcess(zero_prior,tmi_action);
+		SimilarityGaussianProcess my_sim_proc = new SimilarityGaussianProcess(zero_prior,tmi_action,1.0);
 
 		GaussianKernel my_kernel = new GaussianKernel(1.0, 1);
 		List<RealVector> my_states = new ArrayList<RealVector>();

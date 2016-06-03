@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -15,29 +16,32 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.math3.distribution.IntegerDistribution;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.joda.time.LocalDate;
 import org.junit.Test;
 
 import bandit_objects.SimpleTmiAction;
 import bandit_simulator.BanditRunFactory;
+import bandit_simulator.Generator;
 import bandit_simulator.NasBanditInstance;
 import bandit_simulator.NasBanditOutcome;
 import bandit_simulator.NasBanditRunner;
 import bandit_simulator.RunStateFunction;
 import bandit_solvers.ContextualZoomingSolver;
 import bandit_solvers.DoNothingSolver;
+import bandit_solvers.DoNothingTmiGenerator;
 import bandit_solvers.GpGreedySolver;
 import bandit_solvers.GpTsSolver;
 import bandit_solvers.GpUcbSolver;
 import bandit_solvers.GreedyAverageSolver;
 import bandit_solvers.RandomHistoryBanditSolver;
 import bandit_solvers.SimilarityBanditSolver;
-import model.Pair;
 import random_processes.GaussianTmiComparerFactory;
 import random_processes.SimilarityGpFactory;
 import state_factories.FlightFactory;
@@ -52,68 +56,56 @@ import state_update.UpdateModule;
 import state_update_factories.DefaultNasUpdateFactory;
 import util_random.ConstantDistribution;
 import util_random.Distribution;
-import util_random.UniformDurationDistribution;
 
 public class BanditRunTests {
-	public static final File instanceFile = new File(
-			"C:/Users/Alex/Documents/Research/ACRP Research/nasBanditInstances.out");
+	public static final File instanceFile1 = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/nasBanditInstance1.out");
 	public static final DateTimeZone ewrTimeZone = DateTimeZone.forID("America/New_York");
+	public static final double rewardMean = -1102.2190280300927;
+	public static final double rewardVar = 904567.0701894417;
 
-	// public static final File testTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP Research/testTmiPool.out");
-	// public static final File trainTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP Research/trainTmiPool.out");
-	// public static final File testNoTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP Research/testNoTmiPool.out");
-	// public static final File trainNoTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/trainNoTmiPool.out");
+	// Files storing pools of days with no outcomes
+	public static final File testNoOutcomeTmiFile = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/testTmiNoOutPool.out");
+	public static final File trainNoOutcomeTmiFile = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/trainTmiNoOutPool.out");
+	public static final File testNoOutcomeNoTmiFile = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/testNoTmiNoOutPool.out");
+	public static final File trainNoOutcomeNoTmiFile = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/trainNoTmiNoOutPool.out");
 
-	public static final File testTmiFile = new File(
-			"C:/Users/Alex/Documents/Research/ACRP Research/testTmiNoRandPool.out");
-	public static final File trainTmiFile = new File(
-			"C:/Users/Alex/Documents/Research/ACRP Research/trainTmiNoRandPool.out");
+	// Files storing pools of days with historical TMI outcomes
+	public static final File testHistTmiFile = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/testHistTmiNoRandPool.out");
+	public static final File trainHistTmiFile = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/trainHistTmiNoRandPool.out");
+
+	// Files storing pools of day where no TMI is run
 	public static final File testNoTmiFile = new File(
 			"C:/Users/Alex/Documents/Research/ACRP Research/testNoTmiNoRandPool.out");
 	public static final File trainNoTmiFile = new File(
 			"C:/Users/Alex/Documents/Research/ACRP Research/trainNoTmiNoRandPool.out");
 
-	// public static final File testTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/testTmiUltraHighAirPool.out");
-	// public static final File trainTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/trainTmiUltraHighAirPool.out");
-	// public static final File testNoTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/testNoTmiUltraHighAirPool.out");
-	// public static final File trainNoTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/trainNoTmiUltraHighAirPool.out");
-	//
-	// public static final File testTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/testTmiHighAirPool.out");
-	// public static final File trainTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/trainTmiHighAirPool.out");
-	// public static final File testNoTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/testNoTmiHighAirPool.out");
-	// public static final File trainNoTmiFile = new
-	// File("C:/Users/Alex/Documents/Research/ACRP
-	// Research/trainNoTmiHighAirPool.out");
+	// Files storing pools of days where randomly generated TMIs are run
+	public static final File testRandTmiFile = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/testRandTmiNoRandPool.out");
+	public static final File trainRandTmiFile = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/trainRandTmiNoRandPool.out");
 
 	public static final String btsDirName = "C:/Users/Alex/Documents/Research/Data Sets/RITA_EWR_BY_DAY";
 	public static final String btsFilePrefix = "EWR_BTS_On_Time";
+	public static final String adlDirName = "C:/Users/Alex/Documents/Research/Data Sets/adl_ewr_reduced";
+	public static final String adlFilePrefix = "RED_ADL_ewr_lcdm_";
 
 	public static final File capacityFile = new File("TestFiles/CapacityFiles/surv_dates_Apr16_DemoDate_v2.csv");
 	public static final File distanceFile = new File("TestFiles/CapacityFiles/surv_dist_demoData_Dep6_v2_2.csv");
-	public static final File tmiFile = new File("C:/Users/Alex/Documents/Research/ACRP Research/BanditTmiData.csv");
+	// public static final File tmiFile = new
+	// File("C:/Users/Alex/Documents/Research/ACRP Research/BanditTmiData.csv");
+	public static final File tmiFile = new File("C:/Users/Alex/Documents/Research/ACRP Research/BanditGdpData.csv");
 
 	@Test
 	public void testTmiFileRead() throws IOException {
-		System.out.println(new TreeMap<LocalDate, SimpleTmiAction>(BanditRunFactory.parseTmiFile(tmiFile)));
+		System.out.println(new TreeMap<LocalDate, SimpleTmiAction>(BanditRunFactory.parseTmiFile(tmiFile, true)));
 	}
 
 	@Test
@@ -158,9 +150,21 @@ public class BanditRunTests {
 		int startHour = 10;
 		LocalDate date = new LocalDate(2011, 10, 22);
 		DateTime startTime = new DateTime(date.year().get(), date.monthOfYear().get(), date.dayOfMonth().get(),
-				startHour, 0,ewrTimeZone);
-		System.out.println(FlightStateFactory.parseBtsFlightFile(btsDirName, btsFilePrefix, date, startTime,ewrTimeZone,
-				FlightFactory.BTS_FORMAT_ID));
+				startHour, 0, ewrTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(14)));
+		System.out.println(FlightStateFactory.parseBtsFlightFile(btsDirName, btsFilePrefix, date, runInterval,
+				ewrTimeZone, FlightFactory.BTS_FORMAT_ID));
+	}
+
+	@Test
+	public void testAdlFlightStateMakingFunction() throws Exception {
+		int startHour = 10;
+		LocalDate date = new LocalDate(2011, 10, 22);
+		DateTime startTime = new DateTime(date.year().get(), date.monthOfYear().get(), date.dayOfMonth().get(),
+				startHour, 0, ewrTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(14)));
+		System.out.println(FlightStateFactory.parseAdlFlightFile(adlDirName, adlFilePrefix, date, runInterval,
+				ewrTimeZone, FlightFactory.ADL_FORMAT_ID));
 	}
 
 	@Test
@@ -171,13 +175,16 @@ public class BanditRunTests {
 				.parseCapacityFile(capacityFile);
 		// Read TMIs for each day
 		System.out.println("Reading tmi file.");
-		Map<LocalDate, SimpleTmiAction> myTmiActions = BanditRunFactory.parseTmiFile(tmiFile);
+		Map<LocalDate, SimpleTmiAction> myTmiActions = BanditRunFactory.parseTmiFile(tmiFile, true);
 
 		// Read capacity distances for each day
 		System.out.println("Reading distance file.");
 		Map<LocalDate, Map<LocalDate, Double>> myDistances = BanditRunFactory.parseDistanceFile(distanceFile);
-
-		Set<LocalDate> myDates = BanditRunFactory.getValidDates(myTmiActions, myCapacityDistributions, myDistances);
+		
+		Set<LocalDate> availableDates = new HashSet<LocalDate>(myCapacityDistributions.keySet());
+		availableDates.retainAll(myDistances.keySet());
+		
+		Set<LocalDate> myDates = BanditRunFactory.getValidDates(myTmiActions, myCapacityDistributions.keySet());
 		for (LocalDate date : myDates) {
 			if (!myTmiActions.containsKey(date)) {
 				myTmiActions.put(date, new SimpleTmiAction());
@@ -203,11 +210,51 @@ public class BanditRunTests {
 	}
 
 	@Test
-	public void testMakeDayPool() throws Exception {
-		int numTmi = 250;
-		int numNoTmi = 250;
-
+	public void testMakeNoOutcomeDayPool() throws Exception {
+		// Choose delay distributions and make the flight handler
+		Distribution<Duration> depDelayDistribution = new ConstantDistribution<Duration>(Duration.ZERO);
+		Distribution<Duration> arrDelayDistribution = new ConstantDistribution<Duration>(Duration.ZERO);
+		FlightHandler myFlightHandler = new DefaultFlightHandler(depDelayDistribution, arrDelayDistribution);
 		int startHour = 10;
+		int runHours = 14;
+		BanditRunFactory.makeNoOutcomeDayPools(capacityFile, tmiFile, distanceFile, trainNoOutcomeTmiFile,
+				testNoOutcomeTmiFile, trainNoOutcomeNoTmiFile, testNoOutcomeNoTmiFile, adlDirName, adlFilePrefix,
+				ewrTimeZone, startHour, runHours, myFlightHandler);
+		@SuppressWarnings("unchecked")
+		Map<LocalDate, DefaultState> trainTmis = (Map<LocalDate, DefaultState>) BanditRunFactory
+				.readObjectFromFile(trainNoOutcomeTmiFile);
+		@SuppressWarnings("unchecked")
+		Map<LocalDate, DefaultState> testTmis = (Map<LocalDate, DefaultState>) BanditRunFactory
+				.readObjectFromFile(testNoOutcomeTmiFile);
+		@SuppressWarnings("unchecked")
+		Map<LocalDate, DefaultState> trainNoTmis = (Map<LocalDate, DefaultState>) BanditRunFactory
+				.readObjectFromFile(trainNoOutcomeNoTmiFile);
+		@SuppressWarnings("unchecked")
+		Map<LocalDate, DefaultState> testNoTmis = (Map<LocalDate, DefaultState>) BanditRunFactory
+				.readObjectFromFile(testNoOutcomeNoTmiFile);
+		System.out.println("Train tmis: " + trainTmis.keySet().size());
+		System.out.println("Test tmis: " + testTmis.keySet().size());
+		System.out.println("Train no tmis: " + trainNoTmis.keySet().size());
+		System.out.println("Test no tmis: " + testNoTmis.keySet().size());
+
+		Set<LocalDate> allTmis = new HashSet<LocalDate>(trainTmis.keySet());
+		allTmis.addAll(testTmis.keySet());
+		System.out.println("All tmis: " + allTmis.size());
+
+		Set<LocalDate> allNoTmis = new HashSet<LocalDate>(trainNoTmis.keySet());
+		allNoTmis.addAll(testNoTmis.keySet());
+		System.out.println("All no tmis: " + allNoTmis.size());
+		allNoTmis.retainAll(allTmis);
+		System.out.println("All tmis intersect all no tmis: " + allNoTmis.size());
+	}
+
+	@Test
+	public void testMakeInstances() throws ClassNotFoundException, IOException {
+		BanditRunFactory.writeObjectToFile(BanditRunFactory.createInstancesFromPool(distanceFile, trainHistTmiFile,
+				trainNoTmiFile, 50, 129, 129, 200, 5, 1.0), instanceFile1);
+	}
+
+	private RunStateFunction makeDayRunner() {
 		Duration timeStep = Duration.standardMinutes(1);
 		double airDelayWeight = 3.0;
 
@@ -220,82 +267,53 @@ public class BanditRunTests {
 		NASStateUpdate myUpdate = DefaultNasUpdateFactory.makeDefault();
 		UpdateModule myCompleteUpdate = new UpdateModule(myUpdate,
 				new CapacityScenarioUpdate(new DefaultCapacityComparer()));
-		RunStateFunction myNasRunner = new RunStateFunction(myFlightHandler, myCompleteUpdate, timeStep,
-				airDelayWeight);
+		return new RunStateFunction(myFlightHandler, myCompleteUpdate, timeStep, airDelayWeight);
+	}
 
-		BanditRunFactory.makeDayPool(capacityFile, tmiFile, distanceFile, trainTmiFile, testTmiFile, trainNoTmiFile,
-				testNoTmiFile, btsDirName, btsFilePrefix, ewrTimeZone, startHour, numTmi, numNoTmi, myFlightHandler,
-				myNasRunner);
-		Map<DefaultState, Pair<SimpleTmiAction, Double>> outcomes = BanditRunFactory.readOutcomesFromFile(trainTmiFile);
-		for (Map.Entry<DefaultState, Pair<SimpleTmiAction, Double>> myEntry : outcomes.entrySet()) {
-			System.out.println(myEntry.getKey().getCurrentTime());
-			System.out.println(myEntry.getKey().getCapacityState().getActualScenario());
-			System.out.println(myEntry.getValue().getItemA());
-			System.out.println(myEntry.getValue().getItemB());
+	@Test
+	public void testReadOutcomes() throws Exception {
+		@SuppressWarnings("unchecked")
+		Map<LocalDate, ImmutableTriple<DefaultState, SimpleTmiAction, Double>> myOutcomes = (Map<LocalDate, ImmutableTriple<DefaultState, SimpleTmiAction, Double>>) BanditRunFactory
+				.readObjectFromFile(trainRandTmiFile);
+		for (Entry<LocalDate, ImmutableTriple<DefaultState, SimpleTmiAction, Double>> entry : myOutcomes.entrySet()) {
+			System.out.println(entry.getKey());
+			System.out.println(entry.getValue().getLeft().getCurrentTime());
+			System.out.println(entry.getValue().getMiddle());
+			System.out.println(entry.getValue().getRight());
 		}
 	}
 
 	@Test
-	public void testReadPool() throws ClassNotFoundException, IOException {
-		Map<DefaultState, Pair<SimpleTmiAction, Double>> outcomes = BanditRunFactory.readOutcomesFromFile(trainTmiFile);
-		for (Map.Entry<DefaultState, Pair<SimpleTmiAction, Double>> myEntry : outcomes.entrySet()) {
-			System.out.println(myEntry.getKey().getCurrentTime());
-			System.out.println(myEntry.getKey().getCapacityState().getActualScenario());
-			System.out.println(myEntry.getValue().getItemA());
-			System.out.println(myEntry.getValue().getItemB());
-		}
+	public void testAddOutcomesToDayPool() throws Exception {
+		RunStateFunction myNasRunner = makeDayRunner();
+		System.out.println("Adding historical outcomes to training TMIs.");
+		BanditRunFactory.addHistoricalTmiOutcomesToPool(tmiFile, false, distanceFile, trainNoOutcomeTmiFile,
+				trainHistTmiFile, myNasRunner);
+		System.out.println("Adding historical outcomes to test TMIs.");
+		BanditRunFactory.addHistoricalTmiOutcomesToPool(tmiFile, false, distanceFile, testNoOutcomeTmiFile,
+				testHistTmiFile, myNasRunner);
+
+		System.out.println("Adding generated outcomes to train TMIs.");
+		Generator<SimpleTmiAction> myTmiGenerator = BanditRunFactory.makeDefaultEWRGdpGenerator();
+		BanditRunFactory.addGeneratedTmiOutcomesToPool(myTmiGenerator, distanceFile, trainNoOutcomeTmiFile,
+				trainRandTmiFile, myNasRunner);
+		System.out.println("Adding generated outcomes to test TMIs.");
+		BanditRunFactory.addGeneratedTmiOutcomesToPool(myTmiGenerator, distanceFile, testNoOutcomeTmiFile,
+				testRandTmiFile, myNasRunner);
+
+		System.out.println("Adding outcomes to train no TMI days.");
+		myTmiGenerator = new DoNothingTmiGenerator();
+		BanditRunFactory.addGeneratedTmiOutcomesToPool(myTmiGenerator, distanceFile, trainNoOutcomeNoTmiFile,
+				trainNoTmiFile, myNasRunner);
+		System.out.println("Adding generated outcomes to test no TMI days.");
+		BanditRunFactory.addGeneratedTmiOutcomesToPool(myTmiGenerator, distanceFile, testNoOutcomeNoTmiFile,
+				testNoTmiFile, myNasRunner);
 	}
 
 	@Test
-	public void testSerialization() throws Exception {
-		int numInstances = 50;
-		int numHistory = 50;
+	public void runBanditTest() throws Exception {
+		int numHistory = 150;
 		int numRun = 5;
-
-		int startHour = 10;
-		Duration timeStep = Duration.standardMinutes(1);
-		double airDelayWeight = 100.0;
-
-		// Choose delay distributions and make the flight handler
-		Distribution<Duration> depDelayDistribution = new UniformDurationDistribution(-5 * 60, 15 * 60,
-				Duration.standardSeconds(1));
-		Distribution<Duration> arrDelayDistribution = new UniformDurationDistribution(-15 * 60, 15 * 60,
-				Duration.standardSeconds(1));
-		FlightHandler myFlightHandler = new DefaultFlightHandler(depDelayDistribution, arrDelayDistribution);
-
-		// Make update module
-		NASStateUpdate myUpdate = DefaultNasUpdateFactory.makeDefault();
-		UpdateModule myCompleteUpdate = new UpdateModule(myUpdate,
-				new CapacityScenarioUpdate(new DefaultCapacityComparer()));
-		RunStateFunction myNasRunner = new RunStateFunction(myFlightHandler, myCompleteUpdate, timeStep,
-				airDelayWeight);
-
-		BanditRunFactory.serializeInstances(instanceFile, capacityFile, tmiFile, distanceFile, btsDirName,
-				btsFilePrefix, ewrTimeZone, numInstances, numHistory, numRun, startHour, myFlightHandler, myNasRunner,
-				2.0);
-
-	}
-
-	@Test
-	public void testDeserialization() throws Exception {
-		List<NasBanditInstance> myInstances = BanditRunFactory.deserializeInstances(instanceFile);
-		for (NasBanditInstance myInstance : myInstances) {
-			Iterator<SimpleTmiAction> myActionIter = myInstance.getHistoricalOutcomes().getActions().iterator();
-			for (DefaultState state : myInstance.getHistoricalOutcomes().getStates()) {
-				System.out.println(state.getCapacityState());
-				System.out.println(myActionIter.next());
-			}
-		}
-
-	}
-
-	@Test
-	public void runBanditTestTwo() throws Exception {
-		int numHistory = 400;
-		int numRun = 10;
-
-		Duration timeStep = Duration.standardMinutes(1);
-		double airDelayWeight = 3.0;
 
 		// Choose delay distributions and make the flight handler
 		// Distribution<Duration> depDelayDistribution = new
@@ -304,26 +322,21 @@ public class BanditRunTests {
 		// Distribution<Duration> arrDelayDistribution = new
 		// UniformDurationDistribution(-15 * 60, 15 * 60,
 		// Duration.standardSeconds(1));
-		Distribution<Duration> depDelayDistribution = new ConstantDistribution<Duration>(Duration.ZERO);
-		Distribution<Duration> arrDelayDistribution = new ConstantDistribution<Duration>(Duration.ZERO);
-		FlightHandler myFlightHandler = new DefaultFlightHandler(depDelayDistribution, arrDelayDistribution);
-
-		// Make update module
-		NASStateUpdate myUpdate = DefaultNasUpdateFactory.makeDefault();
-		UpdateModule myCompleteUpdate = new UpdateModule(myUpdate,
-				new CapacityScenarioUpdate(new DefaultCapacityComparer()));
-		RunStateFunction myNasRunner = new RunStateFunction(myFlightHandler, myCompleteUpdate, timeStep,
-				airDelayWeight);
+		RunStateFunction myNasRunner = makeDayRunner();
 
 		System.out.println("Reading instances");
-		List<NasBanditInstance> myInstances = BanditRunFactory.createInstancesFromPool(distanceFile, trainTmiFile,
-				trainNoTmiFile, 50, 220, 200, numHistory, numRun, 2.0);
+		@SuppressWarnings("unchecked")
+		List<NasBanditInstance> myInstances = (List<NasBanditInstance>) BanditRunFactory
+				.readObjectFromFile(instanceFile1);
 		List<SimilarityBanditSolver> mySolvers = makeListSolvers(numRun, numHistory);
 
 		int outerIterNum = 0;
-		List<DescriptiveStatistics> myStatList = new LinkedList<DescriptiveStatistics>();
+		List<DescriptiveStatistics> myRewardStatList = new LinkedList<DescriptiveStatistics>();
+		List<DescriptiveStatistics> myImprovementStatList = new LinkedList<DescriptiveStatistics>();
 		for (SimilarityBanditSolver solver : mySolvers) {
-			DescriptiveStatistics myStats = new DescriptiveStatistics();
+			DescriptiveStatistics myRewardStats = new DescriptiveStatistics();
+			DescriptiveStatistics myImprovementStats = new DescriptiveStatistics();
+
 			int innerIterNum = 0;
 			for (NasBanditInstance instance : myInstances) {
 
@@ -334,12 +347,15 @@ public class BanditRunTests {
 
 				System.out.println("Running solver " + outerIterNum + ", instance: " + innerIterNum);
 				NasBanditOutcome myOutcome = NasBanditRunner.runBandit(myNasRunner, instance, solver, numRun);
-				myStats.addValue(
+				myRewardStats.addValue(NasBanditRunner.calculateRewardStats(myOutcome).getMean());
+				myImprovementStats.addValue(
 						NasBanditRunner.calculateRewardStats(myOutcome).getMean() - instanceStatistics.getMean());
+
 				solver.reset();
 				innerIterNum++;
 			}
-			myStatList.add(myStats);
+			myRewardStatList.add(myRewardStats);
+			myImprovementStatList.add(myImprovementStats);
 			outerIterNum++;
 		}
 
@@ -351,68 +367,18 @@ public class BanditRunTests {
 			}
 			baseStats.addValue(instanceStatistics.getMean());
 		}
+		System.out.println("Rewards: ");
 		System.out.println("Base solution: " + baseStats.getMean() + " (" + baseStats.getStandardDeviation() + ")");
 		outerIterNum = 0;
-		for (DescriptiveStatistics stats : myStatList) {
+		for (DescriptiveStatistics stats : myRewardStatList) {
 			System.out.println(
 					"Solver " + outerIterNum + ": " + stats.getMean() + " (" + stats.getStandardDeviation() + ")");
 			outerIterNum++;
 		}
-	}
 
-	@Test
-	public void runBanditTestOne() throws Exception {
-		int numHistory = 10;
-		int numRun = 5;
-
-		Duration timeStep = Duration.standardMinutes(1);
-		double airDelayWeight = 100.0;
-
-		// Choose delay distributions and make the flight handler
-		Distribution<Duration> depDelayDistribution = new UniformDurationDistribution(-5 * 60, 15 * 60,
-				Duration.standardSeconds(1));
-		Distribution<Duration> arrDelayDistribution = new UniformDurationDistribution(-15 * 60, 15 * 60,
-				Duration.standardSeconds(1));
-		FlightHandler myFlightHandler = new DefaultFlightHandler(depDelayDistribution, arrDelayDistribution);
-
-		// Make update module
-		NASStateUpdate myUpdate = DefaultNasUpdateFactory.makeDefault();
-		UpdateModule myCompleteUpdate = new UpdateModule(myUpdate,
-				new CapacityScenarioUpdate(new DefaultCapacityComparer()));
-		RunStateFunction myNasRunner = new RunStateFunction(myFlightHandler, myCompleteUpdate, timeStep,
-				airDelayWeight);
-
-		System.out.println("Reading instances");
-		List<NasBanditInstance> myInstances = BanditRunFactory.deserializeInstances(instanceFile);
-		List<SimilarityBanditSolver> mySolvers = makeListSolvers(numRun, numHistory);
-
-		int outerIterNum = 0;
-		List<DescriptiveStatistics> myStatList = new LinkedList<DescriptiveStatistics>();
-		for (SimilarityBanditSolver solver : mySolvers) {
-			DescriptiveStatistics myStats = new DescriptiveStatistics();
-			int innerIterNum = 0;
-			for (NasBanditInstance instance : myInstances) {
-				System.out.println("Running solver " + outerIterNum + ", instance: " + innerIterNum);
-				NasBanditOutcome myOutcome = NasBanditRunner.runBandit(myNasRunner, instance, solver, numRun);
-				myStats.addValue(NasBanditRunner.calculateRewardStats(myOutcome).getMean());
-				solver.reset();
-				innerIterNum++;
-			}
-			myStatList.add(myStats);
-			outerIterNum++;
-		}
-
-		DescriptiveStatistics baseStats = new DescriptiveStatistics();
-		for (NasBanditInstance instance : myInstances) {
-			DescriptiveStatistics instanceStatistics = new DescriptiveStatistics();
-			for (Double outcome : instance.getUnseenBaseOutcome()) {
-				instanceStatistics.addValue(outcome);
-			}
-			baseStats.addValue(instanceStatistics.getMean());
-		}
-		System.out.println("Base solution: " + baseStats.getMean() + " (" + baseStats.getStandardDeviation() + ")");
+		System.out.println("Improvement over base solution: ");
 		outerIterNum = 0;
-		for (DescriptiveStatistics stats : myStatList) {
+		for (DescriptiveStatistics stats : myImprovementStatList) {
 			System.out.println(
 					"Solver " + outerIterNum + ": " + stats.getMean() + " (" + stats.getStandardDeviation() + ")");
 			outerIterNum++;
@@ -427,18 +393,21 @@ public class BanditRunTests {
 		DoNothingSolver myDoNothingSolver = new DoNothingSolver();
 		GreedyAverageSolver mySolver = new GreedyAverageSolver(tmiComparer);
 		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, numRun + numHistory);
+		double lowerBound = rewardMean - 2 * Math.sqrt(rewardVar);
 		GpGreedySolver myGreedySolver = new GpGreedySolver(
-				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(0.0));
-		GpUcbSolver myGpUcbSolver = new GpUcbSolver(SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(0.0), 0.0);
-		GpTsSolver myGpTsSolver = new GpTsSolver(SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(-20000.0));
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(lowerBound, rewardVar));
+		GpUcbSolver myGpUcbSolver = new GpUcbSolver(
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(lowerBound, rewardVar), 0.0);
+		GpTsSolver myGpTsSolver = new GpTsSolver(
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(lowerBound, rewardVar));
 		RandomHistoryBanditSolver myRandomSolver = new RandomHistoryBanditSolver();
-		// mySolvers.add(myDoNothingSolver);
-		// mySolvers.add(mySolver);
-		// mySolvers.add(myZoomSolver);
-		// mySolvers.add(myGreedySolver);
-		// mySolvers.add(myGpUcbSolver);
+		mySolvers.add(myDoNothingSolver);
+		mySolvers.add(mySolver);
+		mySolvers.add(myZoomSolver);
+		mySolvers.add(myGreedySolver);
+		mySolvers.add(myGpUcbSolver);
 		mySolvers.add(myGpTsSolver);
-		// mySolvers.add(myRandomSolver);
+		mySolvers.add(myRandomSolver);
 
 		return mySolvers;
 	}

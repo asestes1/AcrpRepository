@@ -4,18 +4,20 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.junit.Test;
 
 import metrics.MetricCalculator;
-import model.CriteriaActionPair;
 import model.DoNothingModule;
 import model.SimulationEngineInstance;
 import model.SimulationEngineRunner;
+import model.StateAction;
 import state_criteria.AllLandedCriteria;
 import state_criteria.AlwaysCriteria;
+import state_criteria.StateCriteria;
 import state_factories.AirportStateFactory;
 import state_factories.DateTimeFactory;
 import state_factories.FlightStateFactory;
@@ -25,8 +27,8 @@ import state_representation.DefaultState;
 import state_representation.Flight;
 import state_representation.FlightState;
 import state_update.DefaultFlightHandler;
-import state_update.UpdateModule;
 import state_update.FlightHandler;
+import state_update.UpdateModule;
 import state_update_factories.DefaultNasUpdateFactory;
 import state_update_factories.FlightHandlerFactory;
 import util_random.ConstantDistribution;
@@ -68,9 +70,9 @@ public class FullCapacityTest {
 
 		UpdateModule myUpdateModule = new UpdateModule(DefaultNasUpdateFactory.parse(updateFile),
 				new DoNothingModule<CapacityScenarioState>());
-		CriteriaActionPair<DefaultState> flightAction = new CriteriaActionPair<DefaultState>(
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> flightAction = ImmutablePair.of(
 				new AlwaysCriteria<DefaultState>(), myUpdateModule);
-		ArrayList<CriteriaActionPair<DefaultState>> myList = new ArrayList<CriteriaActionPair<DefaultState>>();
+		ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> myList = new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
 		myList.add(flightAction);
 		SimulationEngineInstance<DefaultState> myEngine = new SimulationEngineInstance<DefaultState>(myList,
 				new AllLandedCriteria<DefaultState>(), myFlightHandler, init);
@@ -111,10 +113,10 @@ public class FullCapacityTest {
 				UpdateModule myUpdateModule = new UpdateModule(DefaultNasUpdateFactory.parse(updateFile),
 						new DoNothingModule<CapacityScenarioState>());
 
-				CriteriaActionPair<DefaultState> flightAction = new CriteriaActionPair<DefaultState>(
+				ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> flightAction = ImmutablePair.of(
 						new AlwaysCriteria<DefaultState>(), myUpdateModule);
 
-				ArrayList<CriteriaActionPair<DefaultState>> myList = new ArrayList<CriteriaActionPair<DefaultState>>();
+				ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> myList = new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
 				myList.add(flightAction);
 
 				SimulationEngineInstance<DefaultState> myEngine = new SimulationEngineInstance<DefaultState>(myList,
@@ -155,10 +157,10 @@ public class FullCapacityTest {
 			UpdateModule myUpdateModule = new UpdateModule(DefaultNasUpdateFactory.parse(updateFile),
 					new DoNothingModule<CapacityScenarioState>());
 
-			CriteriaActionPair<DefaultState> flightAction = new CriteriaActionPair<DefaultState>(
+			ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> flightAction = ImmutablePair.of(
 					new AlwaysCriteria<DefaultState>(), myUpdateModule);
 
-			ArrayList<CriteriaActionPair<DefaultState>> myList = new ArrayList<CriteriaActionPair<DefaultState>>();
+			ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> myList = new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
 			myList.add(flightAction);
 
 			SimulationEngineInstance<DefaultState> myEngine = new SimulationEngineInstance<DefaultState>(myList,

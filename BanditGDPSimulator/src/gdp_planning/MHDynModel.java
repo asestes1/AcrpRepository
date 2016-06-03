@@ -5,13 +5,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import gurobi.GRB;
 import gurobi.GRBEnv;
 import gurobi.GRBException;
 import gurobi.GRBLinExpr;
 import gurobi.GRBModel;
 import gurobi.GRBVar;
-import model.Pair;
 
 public class MHDynModel {
 	private final double groundCost;
@@ -50,7 +51,7 @@ public class MHDynModel {
 	 * @return - the list of PAARs produced by the IP solution.
 	 * @throws GRBException
 	 */
-	public List<Integer> solveModel(List<Pair<Integer,Integer>> flights,
+	public List<Integer> solveModel(List<ImmutablePair<Integer,Integer>> flights,
 			List<Integer> exemptFlights,
 			List<DiscreteCapacityScenario> scenarios,
 			List<Set<Set<Integer>>> scenarioPartition,
@@ -72,18 +73,18 @@ public class MHDynModel {
 	 * @return - the PAARs from the solution of the model
 	 * @throws GRBException
 	 */
-	private List<Integer> getResults(GRBModel model,List<Pair<Integer,Integer>> flights, int numTimePeriods, int scenario)
+	private List<Integer> getResults(GRBModel model,List<ImmutablePair<Integer,Integer>> flights, int numTimePeriods, int scenario)
 			throws GRBException {
 		int numFlights = flights.size();
 		List<Integer> delays = new ArrayList<Integer>(numFlights);
 		//Go through each time period
-		Iterator<Pair<Integer,Integer>> flightIter = flights.iterator();
+		Iterator<ImmutablePair<Integer,Integer>> flightIter = flights.iterator();
 		int flightIndex =0;
 		boolean assigned = true;
 		while(flightIter.hasNext()){
-			Pair<Integer,Integer> nextFlight = flightIter.next();
-			int earlyETA = nextFlight.getItemA();
-			int flightTime = nextFlight.getItemB();
+			ImmutablePair<Integer,Integer> nextFlight = flightIter.next();
+			int earlyETA = nextFlight.getLeft();
+			int flightTime = nextFlight.getRight();
 			for(int j =earlyETA; j < numTimePeriods-flightTime;j++){
 				//Get the variable corresponding to the PAAR in time period i
 				GRBVar assignVar = model.getVarByName("D"+flightIndex+","+j+","+scenario);
@@ -116,7 +117,7 @@ public class MHDynModel {
 	 * @return
 	 * @throws GRBException
 	 */
-	private GRBModel setUpModel( List<Pair<Integer,Integer>> flights,
+	private GRBModel setUpModel( List<ImmutablePair<Integer,Integer>> flights,
 			List<Integer> exemptFlights,
 			 List<DiscreteCapacityScenario> scenarios, List<Set<Set<Integer>>> scenarioPartition)
 					 throws GRBException {
@@ -131,12 +132,12 @@ public class MHDynModel {
 
 		
 		//Add variables which represent assignment of flights
-		Iterator<Pair<Integer,Integer>> myFlightIter = flights.iterator();
+		Iterator<ImmutablePair<Integer,Integer>> myFlightIter = flights.iterator();
 		int flightIndex = 0;
 		while(myFlightIter.hasNext()){
-			Pair<Integer,Integer> nextFlight = myFlightIter.next();
-			int earlyETA = nextFlight.getItemA();
-			int flightTime = nextFlight.getItemB();
+			ImmutablePair<Integer,Integer> nextFlight = myFlightIter.next();
+			int earlyETA = nextFlight.getLeft();
+			int flightTime = nextFlight.getRight();
 			for(int j =earlyETA; j < numTimePeriods-flightTime;j++){
 				for(int k = 0; k < numScenarios;k++){
 					double probability = scenarios.get(k).getProbability();
@@ -162,9 +163,9 @@ public class MHDynModel {
 		flightIndex = 0;
 		myFlightIter = flights.iterator();
 		while(myFlightIter.hasNext()){
-			Pair<Integer,Integer> flight = myFlightIter.next();
-			int earliestETA = flight.getItemA();
-			int flightTime = flight.getItemB();
+			ImmutablePair<Integer,Integer> flight = myFlightIter.next();
+			int earliestETA = flight.getLeft();
+			int flightTime = flight.getRight();
 			for(int k = 0; k < numScenarios; k++){
 				GRBLinExpr sum = new GRBLinExpr();
 				for(int j =earliestETA; j < numTimePeriods-flightTime;j++){
@@ -186,9 +187,9 @@ public class MHDynModel {
 				myFlightIter = flights.iterator();
 				flightIndex = 0;
 				while(myFlightIter.hasNext()){
-					Pair<Integer,Integer> nextFlight = myFlightIter.next();
-					int earlyETA = nextFlight.getItemA();
-					int flightTime = nextFlight.getItemB();
+					ImmutablePair<Integer,Integer> nextFlight = myFlightIter.next();
+					int earlyETA = nextFlight.getLeft();
+					int flightTime = nextFlight.getRight();
 					if(i- flightTime >= earlyETA){
 						inFlow.addTerm(1.0, assignVar[flightIndex][i-flightTime][scenarioIndex]);
 					}
@@ -223,9 +224,9 @@ public class MHDynModel {
 						myFlightIter = flights.iterator();
 						flightIndex = 0;
 						while(myFlightIter.hasNext()){
-							Pair<Integer,Integer> nextFlight = myFlightIter.next();
-							int earlyETA = nextFlight.getItemA();
-							int flightTime = nextFlight.getItemB();
+							ImmutablePair<Integer,Integer> nextFlight = myFlightIter.next();
+							int earlyETA = nextFlight.getLeft();
+							int flightTime = nextFlight.getRight();
 							if(time+flightTime < numTimePeriods && time >= earlyETA){
 								GRBLinExpr rhVar = new GRBLinExpr();
 								rhVar.addTerm(1.0, assignVar[flightIndex][time][firstElement]);

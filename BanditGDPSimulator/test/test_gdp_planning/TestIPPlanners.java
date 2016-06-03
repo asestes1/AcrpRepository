@@ -9,9 +9,11 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.junit.Test;
 
 import engine_factories.SimulationEngineFactory;
@@ -23,9 +25,9 @@ import gdp_planning.GDPPlanningHelper;
 import gdp_planning.StandardTmiPlanner;
 import metrics.MetricCalculator;
 import metrics.PiecewiseLinearFunction;
-import model.CriteriaActionPair;
 import model.SimulationEngineInstance;
 import model.SimulationEngineRunner;
+import model.StateAction;
 import state_criteria.AllLandedCriteria;
 import state_criteria.AlwaysCriteria;
 import state_criteria.AtStartCriteriaFactory;
@@ -74,7 +76,9 @@ public class TestIPPlanners {
 	public void testDirectExtendedHofkin() throws Exception {
 		// File outFile = new
 		// File("TestOutputFiles/TestGDPSolvers/TestExtendedHofkinA");
-		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
+		DateTime startTime = DateTimeFactory.parse(startTimeFile, ordTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(24)));
+
 		// DateTime endTime = startTime.plus(Duration.standardHours(6));
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		// FlightState initialFlightState = new
@@ -83,8 +87,8 @@ public class TestIPPlanners {
 		// Initialize flights
 		HashMap<Integer, Distribution<Integer>> myFieldGenerators = new HashMap<Integer, Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime, ordTimeZone,FlightFactory.BTS_FORMAT_ID,
-				myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval, ordTimeZone,
+				FlightFactory.BTS_FORMAT_ID, myFieldGenerators);
 		FlightState initialFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 
 		CapacityScenarioState initialCapacityState = CapacityScenarioFactory.parseLoToHigh(startTime,
@@ -98,8 +102,9 @@ public class TestIPPlanners {
 		// StateCriteria.or(AtStartCriteriaFactory.parse(startTime),
 		// new RateIncreaseCriteria(60));
 		DirectExtendedHofkinModel myHofkinModel = GdpPlannerFactory.parseDirectExtendedHofkinModel(hofkinFile);
-		// CriteriaActionPair<DefaultState> myHofkinModule= new
-		// CriteriaActionPair<DefaultState>(myHofkinCriteria,myHofkinModel);
+		// ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>
+		// myHofkinModule= new
+		// ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myHofkinCriteria,myHofkinModel);
 
 		DefaultState nextState = myHofkinModel.act(myInitialState, myFlightHandler, Duration.standardMinutes(1));
 		Set<Flight> sittingFlights = nextState.getFlightState().getSittingFlights();
@@ -125,13 +130,16 @@ public class TestIPPlanners {
 		 * DefaultNASStateUpdateFileFactory().parse(updateFile);
 		 * DefaultUpdateModule myUpdate = new DefaultUpdateModule(myNASUpdate,
 		 * new DefaultCapacityScenarioUpdate(new DefaultCapacityComparer()));
-		 * CriteriaActionPair<DefaultState> myUpdateModule = new
-		 * CriteriaActionPair<DefaultState>( new AlwaysCriteria<DefaultState>(),
-		 * myUpdate);
+		 * ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>
+		 * myUpdateModule = new
+		 * ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(
+		 * new AlwaysCriteria<DefaultState>(), myUpdate);
 		 * 
-		 * List<CriteriaActionPair<DefaultState>> modules = new
-		 * ArrayList<CriteriaActionPair<DefaultState>>();
-		 * modules.add(myHofkinModule); modules.add(myUpdateModule);
+		 * List<ImmutablePair<StateCriteria<DefaultState>,StateAction<
+		 * DefaultState>>> modules = new
+		 * ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<
+		 * DefaultState>>>(); modules.add(myHofkinModule);
+		 * modules.add(myUpdateModule);
 		 * 
 		 * StateCriteria<DefaultState> myEndCriteria = new AllLandedCriteria();
 		 * 
@@ -166,7 +174,9 @@ public class TestIPPlanners {
 	@Test
 	public void testDirectMHDyn() throws Exception {
 		// File outFile = new File("TestOutputFiles/TestGDPSolvers/TestMHDynA");
-		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
+		DateTime startTime = DateTimeFactory.parse(startTimeFile, ordTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(24)));
+
 		// DateTime endTime = startTime.plus(Duration.standardHours(6));
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		// FlightState initialFlightState = new
@@ -175,8 +185,8 @@ public class TestIPPlanners {
 		// Initialize flights
 		HashMap<Integer, Distribution<Integer>> myFieldGenerators = new HashMap<Integer, Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime, ordTimeZone,FlightFactory.BTS_FORMAT_ID,
-				myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval, ordTimeZone,
+				FlightFactory.BTS_FORMAT_ID, myFieldGenerators);
 		FlightState initialFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 
 		CapacityScenarioState initialCapacityState = CapacityScenarioFactory.parseLoToHigh(startTime,
@@ -191,8 +201,10 @@ public class TestIPPlanners {
 		// StateCriteria.or(AtStartCriteriaFactory.parse(startTime),
 		// new RateIncreaseCriteria(60));
 		DirectMHDynModel myMHModel = GdpPlannerFactory.parseDirectMHDynModel(hofkinFile);
-		// CriteriaActionPair<DefaultState> myMHModule = new
-		// CriteriaActionPair<DefaultState>(myMHCriteria, myMHModel);
+		// ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>
+		// myMHModule = new
+		// ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myMHCriteria,
+		// myMHModel);
 
 		DefaultState nextState = myMHModel.act(myInitialState, myFlightHandler, Duration.standardMinutes(1));
 		Set<Flight> sittingFlights = nextState.getFlightState().getSittingFlights();
@@ -229,7 +241,9 @@ public class TestIPPlanners {
 	public void testDirectHofkin() throws Exception {
 		// File outFile = new
 		// File("TestOutputFiles/TestGDPSolvers/TestHofkinB");
-		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
+		DateTime startTime = DateTimeFactory.parse(startTimeFile, ordTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(24)));
+
 		// DateTime endTime = startTime.plus(Duration.standardHours(6));
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		// FlightState initialFlightState = new
@@ -238,8 +252,8 @@ public class TestIPPlanners {
 		// Initialize flights
 		HashMap<Integer, Distribution<Integer>> myFieldGenerators = new HashMap<Integer, Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime,ordTimeZone, FlightFactory.BTS_FORMAT_ID,
-				myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval, ordTimeZone,
+				FlightFactory.BTS_FORMAT_ID, myFieldGenerators);
 		FlightState initialFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 
 		CapacityScenarioState initialCapacityState = CapacityScenarioFactory.parseLoToHigh(startTime,
@@ -255,8 +269,9 @@ public class TestIPPlanners {
 		// new RateIncreaseCriteria(60));
 		DirectHofkinModel myHofkinModel = GdpPlannerFactory.parseDirectHofkinModel(hofkinFile);
 
-		// CriteriaActionPair<DefaultState> myHofkinModule = new
-		// CriteriaActionPair<DefaultState>(myHofkinCriteria,
+		// ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>
+		// myHofkinModule = new
+		// ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myHofkinCriteria,
 		// myHofkinModel);
 
 		DefaultState nextState = myHofkinModel.act(myInitialState, myFlightHandler, Duration.standardMinutes(1));
@@ -292,13 +307,16 @@ public class TestIPPlanners {
 		 * DefaultNASStateUpdateFileFactory().parse(updateFile);
 		 * DefaultUpdateModule myUpdate = new DefaultUpdateModule(myNASUpdate,
 		 * new DefaultCapacityScenarioUpdate(new DefaultCapacityComparer()));
-		 * CriteriaActionPair<DefaultState> myUpdateModule = new
-		 * CriteriaActionPair<DefaultState>( new AlwaysCriteria<DefaultState>(),
-		 * myUpdate);
+		 * ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>
+		 * myUpdateModule = new
+		 * ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(
+		 * new AlwaysCriteria<DefaultState>(), myUpdate);
 		 * 
-		 * List<CriteriaActionPair<DefaultState>> modules = new
-		 * ArrayList<CriteriaActionPair<DefaultState>>();
-		 * modules.add(myHofkinModule); modules.add(myUpdateModule);
+		 * List<ImmutablePair<StateCriteria<DefaultState>,StateAction<
+		 * DefaultState>>> modules = new
+		 * ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<
+		 * DefaultState>>>(); modules.add(myHofkinModule);
+		 * modules.add(myUpdateModule);
 		 * 
 		 * StateCriteria<DefaultState> myEndCriteria = new AllLandedCriteria();
 		 * 
@@ -335,7 +353,7 @@ public class TestIPPlanners {
 		SimulationEngineInstance<DefaultState> myEngine = SimulationEngineFactory.makeSimulationInstance(startTimeFile,
 				flightHandlerFile, SimulationEngineFactory.FULL_CAPACITY, flightFile,
 				SimulationEngineFactory.LO_TO_HIGH_SCENARIO, capacityFile, airportFile, updateFile,
-				SimulationEngineFactory.PAAR_HOFKIN, hofkinFile,ordTimeZone);
+				SimulationEngineFactory.PAAR_HOFKIN, hofkinFile, ordTimeZone);
 
 		DefaultState finalState = SimulationEngineRunner.run(myEngine, Duration.standardMinutes(1));
 		PrintStream myStream = new PrintStream(outFile);
@@ -354,7 +372,7 @@ public class TestIPPlanners {
 		SimulationEngineInstance<DefaultState> myEngine = SimulationEngineFactory.makeSimulationInstance(startTimeFile,
 				flightHandlerFile, SimulationEngineFactory.FULL_CAPACITY, flightFile,
 				SimulationEngineFactory.LO_TO_HIGH_SCENARIO, capacityFile, airportFile, updateFile,
-				SimulationEngineFactory.PAAR_RO, roFile,ordTimeZone);
+				SimulationEngineFactory.PAAR_RO, roFile, ordTimeZone);
 
 		DefaultState finalState = SimulationEngineRunner.run(myEngine, Duration.standardMinutes(1));
 		PrintStream myStream = new PrintStream(outFile);
@@ -392,13 +410,14 @@ public class TestIPPlanners {
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		UniformIntDistribution myDistribution = new UniformIntDistribution(100, 400);
 		// Initialize start time
-		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
+		DateTime startTime = DateTimeFactory.parse(startTimeFile, ordTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(24)));
 
 		// Initialize the flight factory
 		HashMap<Integer, Distribution<Integer>> myFieldGenerators = new HashMap<Integer, Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime,ordTimeZone, FlightFactory.BTS_FORMAT_ID,
-				myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval, ordTimeZone,
+				FlightFactory.BTS_FORMAT_ID, myFieldGenerators);
 		FlightState myFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 
 		// Create the initial state
@@ -411,14 +430,15 @@ public class TestIPPlanners {
 		UpdateModule myFlightUpdater = new UpdateModule(myNASStateUpdate,
 				new CapacityScenarioUpdate(new DefaultCapacityComparer()));
 		// Create the criteria-action pairs
-		CriteriaActionPair<DefaultState> myFlightModule = new CriteriaActionPair<DefaultState>(
+		ImmutablePair<StateCriteria<DefaultState>, StateAction<DefaultState>> myFlightModule = ImmutablePair.of(
 				new AlwaysCriteria<DefaultState>(), myFlightUpdater);
 
 		StateCriteria<DefaultState> myGDPCriteria = AtStartCriteriaFactory.parse(startTime);
 
-		CriteriaActionPair<DefaultState> myGDPModule = new CriteriaActionPair<DefaultState>(myGDPCriteria, myPlanner);
+		ImmutablePair<StateCriteria<DefaultState>, StateAction<DefaultState>> myGDPModule = new ImmutablePair<StateCriteria<DefaultState>, StateAction<DefaultState>>(
+				myGDPCriteria, myPlanner);
 
-		List<CriteriaActionPair<DefaultState>> myModules = new ArrayList<CriteriaActionPair<DefaultState>>();
+		List<ImmutablePair<StateCriteria<DefaultState>, StateAction<DefaultState>>> myModules = new ArrayList<ImmutablePair<StateCriteria<DefaultState>, StateAction<DefaultState>>>();
 		myModules.add(myGDPModule);
 		myModules.add(myFlightModule);
 		double maxDelay = 0.0;

@@ -147,12 +147,14 @@ public class TestGDPHelper {
 	@Test
 	public void testAggregateFlightsDuration() throws Exception{
 		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
+		Interval runInterval = new Interval(startTime,startTime.plus(Duration.standardHours(24)));
+
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		UniformIntDistribution myPassengerDistribution = new UniformIntDistribution(100, 400);
 
 		HashMap<Integer,Distribution<Integer>> myFieldGenerators = new HashMap<Integer,Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime,ordTimeZone,FlightFactory.BTS_FORMAT_ID,myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval,ordTimeZone,FlightFactory.BTS_FORMAT_ID,myFieldGenerators);
 		FlightState myFlights = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 		
 		List<Set<Flight>> myList = GDPPlanningHelper.aggregateFlightsByDurationField(

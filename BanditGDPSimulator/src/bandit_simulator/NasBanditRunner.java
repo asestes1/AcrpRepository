@@ -68,6 +68,7 @@ public class NasBanditRunner {
 			allSimilarities.add(nextContext);
 			// Use our bandit solving method to generate the tmi.
 			SimpleTmiAction nextAction = myBandit.suggestAction(nextContext, timeHorizon - i);
+			System.out.println(nextAction);
 			// Calculate our reward
 			double reward = rewardFunction.apply(nextState, nextAction);
 			// Pass the reward to the bandit
@@ -77,7 +78,7 @@ public class NasBanditRunner {
 			// Update our list of rewards observed
 			rewardList.add(reward);
 		}
-		return new NasBanditOutcome(myInstance.getHistoricalOutcomes().getActionSet(), unseenStates, allSimilarities,
+		return new NasBanditOutcome(myInstance.getHistoricalOutcomes().getActionSet(), allSimilarities,
 				actionList, rewardList);
 	}
 

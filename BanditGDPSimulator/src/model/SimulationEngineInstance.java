@@ -3,6 +3,7 @@ package model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 
 import state_criteria.StateCriteria;
@@ -16,7 +17,7 @@ import state_update.FlightHandler;
  * @param <T> the type of state in use
  */
 public class SimulationEngineInstance<T> {
-	private final List<CriteriaActionPair<T>> modules;
+	private final List<ImmutablePair<StateCriteria<T>,StateAction<T>>> modules;
 	private final StateCriteria<T> endCriteria;
 	private final FlightHandler flightHandler;
 	private final T initialState;
@@ -31,18 +32,18 @@ public class SimulationEngineInstance<T> {
 	 * @param timeStep - the time step.
 	 */
 	public SimulationEngineInstance( 
-			List<CriteriaActionPair<T>> modules, 
+			List<ImmutablePair<StateCriteria<T>,StateAction<T>>> modules, 
 			StateCriteria<T> endCriteria,
 			FlightHandler flightHandler,
 			T initialState){
 		this.endCriteria = endCriteria;
-		this.modules = new ArrayList<CriteriaActionPair<T>>(modules);
+		this.modules = new ArrayList<ImmutablePair<StateCriteria<T>,StateAction<T>>>(modules);
 		this.flightHandler = flightHandler;
 		this.initialState = initialState;
 	}
 	
-	public List<CriteriaActionPair<T>> getModules(){
-		return new ArrayList<CriteriaActionPair<T>>(modules);
+	public List<ImmutablePair<StateCriteria<T>,StateAction<T>>> getModules(){
+		return new ArrayList<ImmutablePair<StateCriteria<T>,StateAction<T>>>(modules);
 	}
 	
 	public StateCriteria<T> getEndCriteria() {
@@ -62,7 +63,7 @@ public class SimulationEngineInstance<T> {
 				endCriteria, flightHandler, initialState);
 	}
 	
-	public SimulationEngineInstance<T> setModules(List<CriteriaActionPair<T>> modules){
+	public SimulationEngineInstance<T> setModules(List<ImmutablePair<StateCriteria<T>,StateAction<T>>> modules){
 		return new SimulationEngineInstance<T>(modules,
 				endCriteria, flightHandler, initialState);
 	}

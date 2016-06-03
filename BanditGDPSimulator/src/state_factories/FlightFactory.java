@@ -20,19 +20,26 @@ public final class FlightFactory {
 	}
 
 	private static UninitializedFlightStruct parseAdlCsvRecord(CSVRecord record,int year, int month, int day){
-		String etdTimeString = record.get("OETA");
+		String etdTimeString = record.get("OETD");
 		int etdTimeInt = (int) Double.parseDouble(etdTimeString);
 		int etdYear = year;
 		int etdMonth = month;
 		int etdDay = (etdTimeInt)/10000;
 		int	etdHour = (etdTimeInt %10000)/100;
 		int etdMinute = etdTimeInt % 100;	
-		if(etdDay < day){
+		if(etdDay < day -15){
 			if(month != 12){
 				etdMonth++;
 			}else{
 				etdMonth = 1;
 				etdYear++;
+			}
+		}else if(etdDay > day + 15){
+			if(month != 1){
+				etdMonth--;
+			}else{
+				etdMonth=12;
+				etdYear--;
 			}
 		}
 		
@@ -40,15 +47,22 @@ public final class FlightFactory {
 		int etaTimeInt = (int) Double.parseDouble(etaTimeString);
 		int etaYear = year;
 		int etaMonth = month;
-		int etaDay = (etdTimeInt)/10000;
+		int etaDay = (etaTimeInt)/10000;
 		int	etaHour = (etaTimeInt %10000)/100;
 		int etaMinute = etaTimeInt % 100;
-		if(etaDay < day){
+		if(etaDay < day -15){
 			if(month != 12){
 				etaMonth++;
 			}else{
 				etaMonth = 1;
-				etdYear++;
+				etaYear++;
+			}
+		}else if(etaDay > day + 15){
+			if(month != 1){
+				etaMonth--;
+			}else{
+				etaMonth=12;
+				etaYear--;
 			}
 		}
 

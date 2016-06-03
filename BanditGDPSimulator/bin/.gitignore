@@ -1,5 +1,14 @@
 /bandit_run_tests/
+/bandit_simulator/
 /bandit_solver_tests/
+/bandit_solvers/
+/cancel_module/
+/engine_factories/
+/function_util/
+/gdp_factories/
+/gdp_planning/
+/metrics/
+/model/
 /random_processes/
 /state_criteria/
 /state_factories/

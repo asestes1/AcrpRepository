@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -30,17 +31,17 @@ public final class SimulationEngineRunner {
 	public static <T extends TimeState> T run(SimulationEngineInstance<T> instance, Duration timeStep, PrintStream out, int verbosity)
 			throws Exception {
 		T state = instance.getInitialState();
-		List<CriteriaActionPair<T>> modules = instance.getModules();
+		List<ImmutablePair<StateCriteria<T>,StateAction<T>>> modules = instance.getModules();
 		DateTime currentTime = state.getCurrentTime();
 		FlightHandler flightHandler = instance.getFlightHandler();
 		StateCriteria<T> endCriteria = instance.getEndCriteria();
 		// Run until we reach the end time
 		while (!endCriteria.isSatisfied(state)){
-			List<CriteriaActionPair<T>> updatedModules = new LinkedList<CriteriaActionPair<T>>();
+			List<ImmutablePair<StateCriteria<T>,StateAction<T>>> updatedModules = new LinkedList<ImmutablePair<StateCriteria<T>,StateAction<T>>>();
 			T newState = state;
-			for(CriteriaActionPair<T> myModule: modules){
-				StateCriteria<T> myCriteria = myModule.getItemA();
-				StateAction<T> myAction = myModule.getItemB();
+			for(ImmutablePair<StateCriteria<T>,StateAction<T>> myModule: modules){
+				StateCriteria<T> myCriteria = myModule.getLeft();
+				StateAction<T> myAction = myModule.getRight();
 				if(myCriteria.isSatisfied(state)){
 					newState = myAction.act(state,flightHandler,timeStep);
 					if(verbosity == 3){
@@ -58,7 +59,7 @@ public final class SimulationEngineRunner {
 				}
 				StateCriteria<T> newCriteria = myCriteria.updateHistory(state);
 				endCriteria = endCriteria.updateHistory(state);
-				updatedModules.add(new CriteriaActionPair<>(newCriteria, myAction));
+				updatedModules.add(ImmutablePair.of(newCriteria, myAction));
 				state=newState;
 			}
 			currentTime = currentTime.plus(timeStep);

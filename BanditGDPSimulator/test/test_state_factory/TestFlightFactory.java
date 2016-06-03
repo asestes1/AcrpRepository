@@ -6,6 +6,8 @@ import java.util.HashMap;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.junit.Test;
 
 import state_factories.FlightFactory;
@@ -27,11 +29,13 @@ public class TestFlightFactory {
 
 	@Test
 	public void testFlightFactory() throws Exception{
-		DateTime currentTime = new DateTime(2013,6,8,6,0,ordTimeZone);
+		DateTime startTime = new DateTime(2013,6,8,6,0,ordTimeZone);
+		Interval runInterval = new Interval(startTime,startTime.plus(Duration.standardHours(24)));
+
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		HashMap<Integer, Distribution<Integer>> myFieldGenerators = new HashMap<Integer, Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, new UniformIntDistribution(100, 400));
-		FlightState btsState = FlightStateFactory.parseFlightState(flightsFile, currentTime,ordTimeZone, FlightFactory.BTS_FORMAT_ID,
+		FlightState btsState = FlightStateFactory.parseFlightState(flightsFile, runInterval,ordTimeZone, FlightFactory.BTS_FORMAT_ID,
 				myFieldGenerators);
 		FlightState myState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 				PrintStream outStream = new PrintStream(outFile);

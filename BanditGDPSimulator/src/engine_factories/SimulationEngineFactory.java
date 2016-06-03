@@ -4,11 +4,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
+import org.joda.time.Interval;
 
 import gdp_factories.GdpPlannerFactory;
-import model.CriteriaActionPair;
 import model.SimulationEngineInstance;
 import model.StateAction;
 import state_criteria.AllLandedCriteria;
@@ -52,13 +54,14 @@ public final class SimulationEngineFactory {
 			File flightHandlerFile, int flightFileType, File flightFile, int capacityFileType, File capacityFile,
 			File airportFile, File updateFile, DateTimeZone timeZone) throws Exception {
 		DateTime startTime = DateTimeFactory.parse(startTimeFile,timeZone);
+		Interval myInterval = new Interval(startTime,startTime.plus(Duration.standardDays(1)));
 		FlightHandler flightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 
 		FlightState flightState = null;
 		if (flightFileType == FULL_CAPACITY) {
 			flightState = FlightStateFactory.parseFullCapacityState(flightFile, startTime);
 		} else if (flightFileType == BTS_FLIGHT || flightFileType == BASIC_FLIGHT) {
-			flightState = FlightStateFactory.parseFlightState(flightFile, startTime, timeZone,flightFileType);
+			flightState = FlightStateFactory.parseFlightState(flightFile, myInterval, timeZone,flightFileType);
 		} else {
 			throw new IllegalArgumentException(
 					"The value " + flightFileType + " is not a valid value for the type of flight file.");
@@ -76,10 +79,10 @@ public final class SimulationEngineFactory {
 
 		StateAction<DefaultState> updateModule = DefaultNasUpdateFactory.parse(updateFile);
 
-		List<CriteriaActionPair<DefaultState>> actionList = new ArrayList<CriteriaActionPair<DefaultState>>();
+		List<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> actionList = 
+				new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
 
-		CriteriaActionPair<DefaultState> flightAction = new CriteriaActionPair<DefaultState>(
-				new AlwaysCriteria<DefaultState>(), updateModule);
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> flightAction = ImmutablePair.of(new AlwaysCriteria<DefaultState>(), updateModule);
 
 		StateCriteria<DefaultState> endCriteria = new AllLandedCriteria<DefaultState>();
 		actionList.add(flightAction);
@@ -108,7 +111,7 @@ public final class SimulationEngineFactory {
 			gdpModule = GdpPlannerFactory.parseROPlanner(solverFile);
 		}
 
-		CriteriaActionPair<DefaultState> gdpAction = new CriteriaActionPair<DefaultState>(gdpCriteria, gdpModule);
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> gdpAction = ImmutablePair.of(gdpCriteria, gdpModule);
 		return addPreAction(myInstance, gdpAction);
 	}
 
@@ -119,21 +122,21 @@ public final class SimulationEngineFactory {
 				flightFileType, flightFile, capacityFileType, capacityFile, airportFile, updateFile, timeZone);
 		StateCriteria<DefaultState> gdpCriteria = AtStartCriteriaFactory
 				.parse(myInstance.getInitialState().getCurrentTime());
-		CriteriaActionPair<DefaultState> gdpAction = new CriteriaActionPair<DefaultState>(gdpCriteria, gdpModule);
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> gdpAction = ImmutablePair.of(gdpCriteria, gdpModule);
 		return addPreAction(myInstance, gdpAction);
 	}
 
 	public static <T> SimulationEngineInstance<T> addPreAction(SimulationEngineInstance<T> instance,
-			CriteriaActionPair<T> preAction) {
-		List<CriteriaActionPair<T>> myModules = instance.getModules();
+			ImmutablePair<StateCriteria<T>,StateAction<T>> preAction) {
+		List<ImmutablePair<StateCriteria<T>,StateAction<T>>> myModules = instance.getModules();
 		myModules.add(0, preAction);
 		instance = instance.setModules(myModules);
 		return instance;
 	}
 
 	public static <T> SimulationEngineInstance<T> addPostAction(SimulationEngineInstance<T> instance,
-			CriteriaActionPair<T> postAction) {
-		List<CriteriaActionPair<T>> myModules = instance.getModules();
+			ImmutablePair<StateCriteria<T>,StateAction<T>> postAction) {
+		List<ImmutablePair<StateCriteria<T>,StateAction<T>>> myModules = instance.getModules();
 		myModules.add(postAction);
 		instance = instance.setModules(myModules);
 		return instance;

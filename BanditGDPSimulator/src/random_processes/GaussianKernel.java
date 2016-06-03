@@ -17,6 +17,7 @@ import org.apache.commons.math3.linear.RealVector;
 public class GaussianKernel implements BiFunction<RealVector, RealVector, Double> {
 	private final RealMatrix kernel_matrix;
 	private final double scale_factor;
+	private final double bandwidth;
 	private final int dimension;
 
 	/**
@@ -27,6 +28,7 @@ public class GaussianKernel implements BiFunction<RealVector, RealVector, Double
 	public GaussianKernel(double d, int dimension) {
 		this.scale_factor = d;
 		this.dimension = dimension;
+		this.bandwidth = 1;
 		kernel_matrix = new BlockRealMatrix(dimension, dimension);
 		for(int i = 0; i < dimension;i++){
 			for(int j =0;j < dimension;j++){
@@ -41,6 +43,21 @@ public class GaussianKernel implements BiFunction<RealVector, RealVector, Double
 	
 	public GaussianKernel(double scale_factor, RealVector activity) {
 		this.scale_factor = scale_factor;
+		this.bandwidth = 1;
+		dimension = activity.getDimension();
+		kernel_matrix = new BlockRealMatrix(dimension, dimension);
+		for(int i = 0; i < dimension;i++){
+			if(activity.getEntry(i) >= 0){
+				kernel_matrix.setEntry(i,i, activity.getEntry(i));
+			}else{
+				throw new InvalidParameterException("Activity must be non-negative");
+			}
+		}
+	}
+	
+	public GaussianKernel(double scale_factor, double bandwidth, RealVector activity) {
+		this.scale_factor = scale_factor;
+		this.bandwidth = 1;
 		dimension = activity.getDimension();
 		kernel_matrix = new BlockRealMatrix(dimension, dimension);
 		for(int i = 0; i < dimension;i++){
@@ -58,7 +75,7 @@ public class GaussianKernel implements BiFunction<RealVector, RealVector, Double
 			return 1.0;
 		}else{
 			RealVector difference = arg0.subtract(arg1);
-			double exponent = -1*kernel_matrix.operate(difference).dotProduct(difference);
+			double exponent = -kernel_matrix.operate(difference).dotProduct(difference)/bandwidth;
 			return scale_factor*Math.exp(exponent);
 		}
 	}

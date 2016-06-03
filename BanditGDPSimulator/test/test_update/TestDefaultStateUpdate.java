@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.junit.Test;
 
 import model.DoNothingModule;
@@ -35,9 +36,10 @@ public class TestDefaultStateUpdate {
 		File updateFile = new File("TestFiles/AirportUpdateFiles/DefaultNASStateUpdateTestA");
 		File outFile = new File("TestOutputFiles/TestUpdateOutput/TestDefaultUpdateA");
 		DateTime startTime = DateTimeFactory.parse(startTimeFile,DateTimeZone.UTC);
+		Interval runInterval = new Interval(startTime,startTime.plus(Duration.standardHours(24)));
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		
-		FlightState initialFlightState = FlightStateFactory.parseFlightState(flightFile, startTime,DateTimeZone.UTC, FlightFactory.BASIC_FORMAT_ID);
+		FlightState initialFlightState = FlightStateFactory.parseFlightState(flightFile, runInterval,DateTimeZone.UTC, FlightFactory.BASIC_FORMAT_ID);
 
 		DefaultState myStart = new DefaultState(startTime, initialFlightState, AirportStateFactory.parseAirportState(airportFile, startTime),
 				CapacityScenarioFactory.parseBasicState(capacityFile));

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
@@ -20,12 +21,13 @@ import gdp_planning.IndParamPlanner;
 import gdp_planning.ShiftedBasicPAARChooser;
 import gdp_planning.StandardTmiPlanner;
 import metrics.MetricCalculator;
-import model.CriteriaActionPair;
 import model.GdpAction;
 import model.SimulationEngineInstance;
 import model.SimulationEngineRunner;
+import model.StateAction;
 import state_criteria.AllLandedCriteria;
 import state_criteria.AlwaysCriteria;
+import state_criteria.StateCriteria;
 import state_factories.AirportStateFactory;
 import state_factories.CapacityScenarioFactory;
 import state_factories.DateTimeFactory;
@@ -62,11 +64,11 @@ public class BTSConstructTest {
 		File outFile = new File("TestOutputFiles/ValidationTests/ORD_Run");
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
-
+		Interval runInterval = new Interval(startTime,startTime.plus(Duration.standardHours(24)));
 		UniformIntDistribution myPassengerDistribution = new UniformIntDistribution(100, 400);
 		HashMap<Integer,Distribution<Integer>> myFieldGenerators = new HashMap<Integer,Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime,ordTimeZone,FlightFactory.BTS_FORMAT_ID,myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval,ordTimeZone,FlightFactory.BTS_FORMAT_ID,myFieldGenerators);
 		btsState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 		List<Integer> demandCounts = GDPPlanningHelper.aggregateFlightCountsByFlightTimeField(
 				btsState.getSittingFlights(), Duration.standardHours(1),
@@ -136,11 +138,12 @@ public class BTSConstructTest {
 		File outFile = new File("TestOutputFiles/TestEngineOutput/ORD_RBX_Run");
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
 		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
+		Interval runInterval = new Interval(startTime,startTime.plus(Duration.standardHours(24)));
 
 		UniformIntDistribution myPassengerDistribution = new UniformIntDistribution(100, 400);
 		HashMap<Integer,Distribution<Integer>> myFieldGenerators = new HashMap<Integer,Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime,ordTimeZone,FlightFactory.BTS_FORMAT_ID,myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval,ordTimeZone,FlightFactory.BTS_FORMAT_ID,myFieldGenerators);
 		FlightState myFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 		
 		AirportState myAirportState =AirportStateFactory.parseAirportState(airportFile, startTime);
@@ -165,6 +168,7 @@ public class BTSConstructTest {
 		File outFile = new File("TestOutputFiles/ValidationTests/ORD_2Cap_Run");
 		// Initialize start time
 		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
+		Interval runInterval = new Interval(startTime,startTime.plus(Duration.standardHours(24)));
 
 		// Initialize flight handler
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
@@ -173,7 +177,7 @@ public class BTSConstructTest {
 		// Initialize flights
 		HashMap<Integer,Distribution<Integer>> myFieldGenerators = new HashMap<Integer,Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime,ordTimeZone,FlightFactory.BTS_FORMAT_ID,myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval,ordTimeZone,FlightFactory.BTS_FORMAT_ID,myFieldGenerators);
 		FlightState myFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 		
 		AirportState myAirportState = AirportStateFactory.parseAirportState(airportFile, startTime);
@@ -185,10 +189,11 @@ public class BTSConstructTest {
 		UpdateModule myFlightUpdater = new UpdateModule(myNASStateUpdate,
 				new CapacityScenarioUpdate(new DefaultCapacityComparer()));
 
-		CriteriaActionPair<DefaultState> myFlightModule = new CriteriaActionPair<DefaultState>(
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myFlightModule = ImmutablePair.of(
 				new AlwaysCriteria<DefaultState>(), myFlightUpdater);
 
-		List<CriteriaActionPair<DefaultState>> myModules = new ArrayList<CriteriaActionPair<DefaultState>>();
+		List<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> myModules = 
+				new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
 		myModules.add(myFlightModule);
 
 		SimulationEngineInstance<DefaultState> myEngine = new SimulationEngineInstance<DefaultState>(myModules,

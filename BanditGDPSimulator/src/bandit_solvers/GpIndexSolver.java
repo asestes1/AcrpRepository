@@ -27,7 +27,7 @@ public abstract class GpIndexSolver extends IndexSolver {
 	
 	@Override
 	public void reset() {
-		myProcess = new SimilarityGaussianProcess(myProcess.getMeanFunction(),myProcess.getCovarianceFunction());
+		myProcess = new SimilarityGaussianProcess(myProcess.getMeanFunction(),myProcess.getCovarianceFunction(),myProcess.getNumPoints());
 		super.reset();
 	}
 }

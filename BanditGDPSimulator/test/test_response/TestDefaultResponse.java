@@ -6,18 +6,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.junit.Test;
 
 import airline_response.DefaultAirlineResponse;
 import gdp_factories.GdpPlannerFactory;
 import gdp_planning.StandardTmiPlanner;
 import metrics.MetricCalculator;
-import model.CriteriaActionPair;
 import model.SimulationEngineInstance;
 import model.SimulationEngineRunner;
+import model.StateAction;
 import state_criteria.AllLandedCriteria;
 import state_criteria.AlwaysCriteria;
 import state_criteria.AtStartCriteriaFactory;
@@ -89,13 +91,14 @@ public class TestDefaultResponse {
 		UniformIntDistribution myDistribution = new UniformIntDistribution(100, 400);
 		// Initialize start time
 		DateTime startTime = DateTimeFactory.parse(startTimeFile, ordTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(24)));
 
 		// Initialize the flight factory
 		HashMap<Integer, Distribution<Integer>> myIntFieldGenerators = new HashMap<Integer, Distribution<Integer>>();
 		myIntFieldGenerators.put(Flight.numPassengersID, myDistribution);
 		HashMap<Integer, Distribution<Duration>> myDurationFieldGenerators = new HashMap<Integer, Distribution<Duration>>();
 		myDurationFieldGenerators.put(Flight.maxDelayID, maxDelayDist);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFlights, startTime, ordTimeZone,
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFlights, runInterval, ordTimeZone,
 				FlightFactory.BTS_FORMAT_ID, myIntFieldGenerators, new HashMap<Integer, Distribution<DateTime>>(),
 				myDurationFieldGenerators);
 		FlightState myFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
@@ -110,17 +113,17 @@ public class TestDefaultResponse {
 		UpdateModule myFlightUpdater = new UpdateModule(myNASStateUpdate,
 				new CapacityScenarioUpdate(new DefaultCapacityComparer()));
 		// Create the criteria-action pairs
-		CriteriaActionPair<DefaultState> myFlightModule = new CriteriaActionPair<DefaultState>(
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myFlightModule = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(
 				new AlwaysCriteria<DefaultState>(), myFlightUpdater);
 
 		StateCriteria<DefaultState> myGDPCriteria = AtStartCriteriaFactory.parse(startTime);
 
-		CriteriaActionPair<DefaultState> myGDPModule = new CriteriaActionPair<DefaultState>(myGDPCriteria, myPlanner);
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myGDPModule = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myGDPCriteria, myPlanner);
 
-		CriteriaActionPair<DefaultState> myResponseModule = new CriteriaActionPair<DefaultState>(myGDPCriteria,
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myResponseModule = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myGDPCriteria,
 				myResponse);
 
-		List<CriteriaActionPair<DefaultState>> myModules = new ArrayList<CriteriaActionPair<DefaultState>>();
+		List<ImmutablePair<StateCriteria<DefaultState>, StateAction<DefaultState>>> myModules = new ArrayList<ImmutablePair<StateCriteria<DefaultState>, StateAction<DefaultState>>>();
 		myModules.add(myGDPModule);
 		myModules.add(myResponseModule);
 		myModules.add(myFlightModule);

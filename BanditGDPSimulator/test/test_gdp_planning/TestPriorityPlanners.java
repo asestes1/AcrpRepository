@@ -8,9 +8,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.junit.Test;
 
 import engine_factories.SimulationEngineFactory;
@@ -22,11 +24,11 @@ import gdp_planning.IndParamPlanner;
 import gdp_planning.ShiftedBasicPAARChooser;
 import gdp_planning.StandardTmiPlanner;
 import metrics.MetricCalculator;
-import model.CriteriaActionPair;
-import model.GdpAction;
 import model.DoNothingModule;
+import model.GdpAction;
 import model.SimulationEngineInstance;
 import model.SimulationEngineRunner;
+import model.StateAction;
 import state_criteria.AllLandedCriteria;
 import state_criteria.AlwaysCriteria;
 import state_criteria.AtStartCriteriaFactory;
@@ -71,15 +73,16 @@ public class TestPriorityPlanners {
 
 		File outFile = new File("TestOutputFiles/TestGDPSolvers/RBDFullCapacityTestOut1");
 
-		FunctionEx<DefaultState, GdpAction, Exception> myTmiChooser = new IndParamPlanner(
-				new BasicPAARChooser(), new FixedDurationGDPIntervalChooser(Duration.standardDays(1)),
+		FunctionEx<DefaultState, GdpAction, Exception> myTmiChooser = new IndParamPlanner(new BasicPAARChooser(),
+				new FixedDurationGDPIntervalChooser(Duration.standardDays(1)),
 				new ConstantRadiusChooser(Double.POSITIVE_INFINITY));
 		StandardTmiPlanner myGDPModule = new StandardTmiPlanner(myTmiChooser,
 				new FlightDurationFieldComparator(Flight.flightTimeID).reversed());
 
 		SimulationEngineInstance<DefaultState> myEngine = SimulationEngineFactory.makeSimulationInstance(startTimeFile,
 				flightHandlerFile, SimulationEngineFactory.FULL_CAPACITY, flightFile,
-				SimulationEngineFactory.BASIC_SCENARIO, highCapacityFile, airportFile, updateFile, myGDPModule, ordTimeZone);
+				SimulationEngineFactory.BASIC_SCENARIO, highCapacityFile, airportFile, updateFile, myGDPModule,
+				ordTimeZone);
 
 		DefaultState finalState = SimulationEngineRunner.run(myEngine, Duration.standardMinutes(1));
 		PrintStream myStream = new PrintStream(outFile);
@@ -94,15 +97,16 @@ public class TestPriorityPlanners {
 	public void FullCapacityRBSTest() throws Exception {
 
 		File outFile = new File("TestOutputFiles/TestGDPSolvers/RBSFullCapacityTestOut1");
-		FunctionEx<DefaultState, GdpAction, Exception> myTmiChooser = new IndParamPlanner(
-				new BasicPAARChooser(), new FixedDurationGDPIntervalChooser(Duration.standardDays(1)),
+		FunctionEx<DefaultState, GdpAction, Exception> myTmiChooser = new IndParamPlanner(new BasicPAARChooser(),
+				new FixedDurationGDPIntervalChooser(Duration.standardDays(1)),
 				new ConstantRadiusChooser(Double.POSITIVE_INFINITY));
 		StandardTmiPlanner myGDPModule = new StandardTmiPlanner(myTmiChooser,
 				new FlightDurationFieldComparator(Flight.origETAFieldID));
 
 		SimulationEngineInstance<DefaultState> myEngine = SimulationEngineFactory.makeSimulationInstance(startTimeFile,
 				flightHandlerFile, SimulationEngineFactory.FULL_CAPACITY, flightFile,
-				SimulationEngineFactory.BASIC_SCENARIO, highCapacityFile, airportFile, updateFile, myGDPModule, ordTimeZone);
+				SimulationEngineFactory.BASIC_SCENARIO, highCapacityFile, airportFile, updateFile, myGDPModule,
+				ordTimeZone);
 
 		DefaultState finalState = SimulationEngineRunner.run(myEngine, Duration.standardMinutes(1));
 		PrintStream myStream = new PrintStream(outFile);
@@ -124,7 +128,8 @@ public class TestPriorityPlanners {
 
 		SimulationEngineInstance<DefaultState> myEngine = SimulationEngineFactory.makeSimulationInstance(startTimeFile,
 				flightHandlerFile, SimulationEngineFactory.FULL_CAPACITY, flightFile,
-				SimulationEngineFactory.BASIC_SCENARIO, lowCapacityFile, airportFile, updateFile, myGDPModule, ordTimeZone);
+				SimulationEngineFactory.BASIC_SCENARIO, lowCapacityFile, airportFile, updateFile, myGDPModule,
+				ordTimeZone);
 
 		DefaultState finalState = SimulationEngineRunner.run(myEngine, Duration.standardMinutes(1));
 		PrintStream myStream = new PrintStream(outFile);
@@ -155,7 +160,8 @@ public class TestPriorityPlanners {
 
 		SimulationEngineInstance<DefaultState> myEngine = SimulationEngineFactory.makeSimulationInstance(startTimeFile,
 				flightHandlerFile, SimulationEngineFactory.FULL_CAPACITY, flightFile,
-				SimulationEngineFactory.BASIC_SCENARIO, lowCapacityFile, airportFile, updateFile, myGDPModule, ordTimeZone);
+				SimulationEngineFactory.BASIC_SCENARIO, lowCapacityFile, airportFile, updateFile, myGDPModule,
+				ordTimeZone);
 
 		DefaultState finalState = SimulationEngineRunner.run(myEngine, Duration.standardMinutes(1));
 		PrintStream myStream = new PrintStream(outFile);
@@ -177,7 +183,8 @@ public class TestPriorityPlanners {
 	public void StaticPriorityValidationTest() throws Exception {
 		File outFile = new File("TestOutputFiles/ValidationTests/PriorityValidationTestA");
 		// Initialize start time
-		DateTime startTime = DateTimeFactory.parse(startTimeFile,ordTimeZone);
+		DateTime startTime = DateTimeFactory.parse(startTimeFile, ordTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(24)));
 
 		// Initialize flight handler
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
@@ -186,8 +193,8 @@ public class TestPriorityPlanners {
 		// Initialize flights
 		HashMap<Integer, Distribution<Integer>> myFieldGenerators = new HashMap<Integer, Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime, ordTimeZone, FlightFactory.BTS_FORMAT_ID,
-				myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval, ordTimeZone,
+				FlightFactory.BTS_FORMAT_ID, myFieldGenerators);
 		FlightState myFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 
 		// Create the initial state
@@ -198,7 +205,7 @@ public class TestPriorityPlanners {
 		// Create the flight updater
 		NASStateUpdate myNASStateUpdate = new NASStateUpdate(new ConstantRunwayDistribution());
 		UpdateModule myFlightUpdater = new UpdateModule(myNASStateUpdate, new DoNothingModule<CapacityScenarioState>());
-		CriteriaActionPair<DefaultState> myFlightModule = new CriteriaActionPair<DefaultState>(
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myFlightModule = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(
 				new AlwaysCriteria<DefaultState>(), myFlightUpdater);
 
 		PrintStream myStream = new PrintStream(outFile);
@@ -206,8 +213,8 @@ public class TestPriorityPlanners {
 		int range = 10;
 		for (int i = -1 * range; i <= range; i++) {
 			System.out.println(i);
-			FunctionEx<DefaultState, GdpAction, Exception> myTmiChooser = new IndParamPlanner(new ShiftedBasicPAARChooser(i),
-					new FixedDurationGDPIntervalChooser(Duration.standardDays(2)),
+			FunctionEx<DefaultState, GdpAction, Exception> myTmiChooser = new IndParamPlanner(
+					new ShiftedBasicPAARChooser(i), new FixedDurationGDPIntervalChooser(Duration.standardDays(2)),
 					new ConstantRadiusChooser(Double.POSITIVE_INFINITY));
 			StandardTmiPlanner myRBSModule = new StandardTmiPlanner(myTmiChooser,
 					new FlightDurationFieldComparator(Flight.origETAFieldID));
@@ -216,10 +223,10 @@ public class TestPriorityPlanners {
 
 			StateCriteria<DefaultState> myCriteria = AtStartCriteriaFactory.parse(startTime);
 
-			CriteriaActionPair<DefaultState> myRBSPair = new CriteriaActionPair<DefaultState>(myCriteria, myRBSModule);
-			CriteriaActionPair<DefaultState> myRBDPair = new CriteriaActionPair<DefaultState>(myCriteria, myRBDModule);
-			List<CriteriaActionPair<DefaultState>> myRBSModules = new ArrayList<CriteriaActionPair<DefaultState>>();
-			List<CriteriaActionPair<DefaultState>> myRBDModules = new ArrayList<CriteriaActionPair<DefaultState>>();
+			ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myRBSPair = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myCriteria, myRBSModule);
+			ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myRBDPair = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myCriteria, myRBDModule);
+			List<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> myRBSModules = new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
+			List<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> myRBDModules = new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
 			myRBSModules.add(myRBSPair);
 			myRBSModules.add(myFlightModule);
 			myRBDModules.add(myRBDPair);
@@ -250,6 +257,7 @@ public class TestPriorityPlanners {
 		File outFile = new File("TestOutputFiles/ValidationTests/PriorityValidationTestB");
 		// Initialize start time
 		DateTime startTime = DateTimeFactory.parse(startTimeFile, ordTimeZone);
+		Interval runInterval = new Interval(startTime, startTime.plus(Duration.standardHours(24)));
 
 		// Initialize flight handler
 		FlightHandler myFlightHandler = FlightHandlerFactory.parseFlightHandler(flightHandlerFile);
@@ -258,8 +266,8 @@ public class TestPriorityPlanners {
 		// Initialize flights
 		HashMap<Integer, Distribution<Integer>> myFieldGenerators = new HashMap<Integer, Distribution<Integer>>();
 		myFieldGenerators.put(Flight.numPassengersID, myPassengerDistribution);
-		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, startTime, ordTimeZone, FlightFactory.BTS_FORMAT_ID,
-				myFieldGenerators);
+		FlightState btsState = FlightStateFactory.parseFlightState(btsFile, runInterval, ordTimeZone,
+				FlightFactory.BTS_FORMAT_ID, myFieldGenerators);
 		FlightState myFlightState = FlightStateFactory.delaySittingFlights(myFlightHandler, btsState);
 
 		// Create the initial state
@@ -271,7 +279,7 @@ public class TestPriorityPlanners {
 		NASStateUpdate myNASStateUpdate = new NASStateUpdate(new ConstantRunwayDistribution());
 		UpdateModule myFlightUpdater = new UpdateModule(myNASStateUpdate,
 				new CapacityScenarioUpdate(new DefaultCapacityComparer()));
-		CriteriaActionPair<DefaultState> myFlightModule = new CriteriaActionPair<DefaultState>(
+		ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myFlightModule = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(
 				new AlwaysCriteria<DefaultState>(), myFlightUpdater);
 
 		PrintStream myStream = new PrintStream(outFile);
@@ -285,8 +293,8 @@ public class TestPriorityPlanners {
 			double rbdAirCost = 0.0;
 			double rbsAirCost = 0.0;
 			for (int j = 0; j < num_trials; j++) {
-				FunctionEx<DefaultState, GdpAction, Exception> myTmiChooser = new IndParamPlanner(new ShiftedBasicPAARChooser(i),
-						new FixedDurationGDPIntervalChooser(Duration.standardDays(2)),
+				FunctionEx<DefaultState, GdpAction, Exception> myTmiChooser = new IndParamPlanner(
+						new ShiftedBasicPAARChooser(i), new FixedDurationGDPIntervalChooser(Duration.standardDays(2)),
 						new ConstantRadiusChooser(Double.POSITIVE_INFINITY));
 				StandardTmiPlanner myRBSModule = new StandardTmiPlanner(myTmiChooser,
 						new FlightDurationFieldComparator(Flight.origETAFieldID));
@@ -296,15 +304,15 @@ public class TestPriorityPlanners {
 				StateCriteria<DefaultState> myCriteria = StateCriteria.or(AtStartCriteriaFactory.parse(startTime),
 						new RateIncreaseCriteria<DefaultState>(60));
 
-				CriteriaActionPair<DefaultState> myRBSPair = new CriteriaActionPair<DefaultState>(myCriteria,
+				ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myRBSPair = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myCriteria,
 						myRBSModule);
 
-				CriteriaActionPair<DefaultState> myRBDPair = new CriteriaActionPair<DefaultState>(myCriteria,
+				ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>> myRBDPair = new ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>(myCriteria,
 						myRBDModule);
 
-				List<CriteriaActionPair<DefaultState>> myRBSModules = new ArrayList<CriteriaActionPair<DefaultState>>();
+				List<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> myRBSModules = new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
 
-				List<CriteriaActionPair<DefaultState>> myRBDModules = new ArrayList<CriteriaActionPair<DefaultState>>();
+				List<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>> myRBDModules = new ArrayList<ImmutablePair<StateCriteria<DefaultState>,StateAction<DefaultState>>>();
 				myRBSModules.add(myRBSPair);
 				myRBSModules.add(myFlightModule);
 
