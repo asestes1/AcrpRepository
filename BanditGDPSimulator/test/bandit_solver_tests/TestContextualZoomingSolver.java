@@ -31,7 +31,7 @@ public class TestContextualZoomingSolver {
 
 	public void GpRelevantGDPsTest() throws Exception{
 		ContextualZoomingSolver myGreedySolver = new ContextualZoomingSolver(
-				 GaussianTmiComparerFactory.makeDefaultTmiComparer(), 1.0, 10);
+				 GaussianTmiComparerFactory.makeDefaultTmiComparer(), 1.0, 10,1.0);
 
 		GaussianKernel myKernel = new GaussianKernel(1.0, 1);
 		List<RealVector> my_states = new ArrayList<RealVector>();
@@ -85,7 +85,7 @@ public class TestContextualZoomingSolver {
 
 		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparer = GaussianTmiComparerFactory.makeDefaultTmiComparer();
 
-		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, 100);
+		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, 100,1.0);
 		BanditOutcome myZoomOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 				myInstance, myZoomSolver, 100);
 		System.out.println(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myZoomOutcome,

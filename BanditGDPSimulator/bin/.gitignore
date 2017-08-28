@@ -1,6 +1,7 @@
-/bandit_run_tests/
+/airline_response/
+/airline_response_factories/
+/bandit_objects/
 /bandit_simulator/
-/bandit_solver_tests/
 /bandit_solvers/
 /cancel_module/
 /engine_factories/
@@ -14,6 +15,8 @@
 /state_factories/
 /state_representation/
 /state_update/
+/bandit_run_tests/
+/bandit_solver_tests/
 /state_update_factories/
 /test_engine/
 /test_gdp_planning/

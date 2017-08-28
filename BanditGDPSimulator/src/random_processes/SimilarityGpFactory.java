@@ -25,4 +25,12 @@ public final class SimilarityGpFactory {
 				GaussianTmiComparerFactory.makeDefaultTmiComparer();
 		return new SimilarityGaussianProcess(constant_prior, tmi_action,scaleFactor);
 	}
+	
+	public static final SimilarityGaussianProcess makeConstantPriorSimilarityGpProcess(Double constant,Double scaleFactor,
+			Double tmiBandwidth){
+		Function<SimpleTmiAction,Double> constantPrior = new ConstantFunction(constant);
+		BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmiAction = 
+				GaussianTmiComparerFactory.makeDefaultTmiComparer(tmiBandwidth);
+		return new SimilarityGaussianProcess(constantPrior, tmiAction,scaleFactor);
+	}
 }

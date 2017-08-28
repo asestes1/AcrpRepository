@@ -11,10 +11,10 @@ public final class GaussianTmiComparerFactory {
 	private GaussianTmiComparerFactory(){
 		
 	}
-	private static final double rateVar= 10.87533169;
-	private static final double startVar= 4974.050068;
-	private static final double durationVar= 18916.78948;
-	private static final double radiusVar= 674892.3393;
+	private static final double rateVar= 9.2671996124;
+	private static final double startVar= 5406.23631298;
+	private static final double durationVar= 15707.1247578;
+	private static final double radiusVar= 749753.588299;
 	
 
 	private static final RealVector defaultTmiActivity 

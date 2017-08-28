@@ -7,23 +7,23 @@ public final class GpSolverFactory {
 		
 	}
 	
-	public static final GpGreedySolver makeGpGreedySolver(){
+	public static final GpGreedySolver makeGpGreedySolver(Double bandwidth){
 		return new GpGreedySolver(
-				SimilarityGpFactory.makeZeroPriorSimilarityGpProcess());
+				SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),bandwidth);
 	}
 	
-	public static final GpUcbSolver makeGpUcbSolver(){
+	public static final GpUcbSolver makeGpUcbSolver(Double bandwidth){
 		return new GpUcbSolver(
-				SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),0.0);
+				SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),0.0,bandwidth);
 	}
 	
-	public static final GpTsSolver makeGpTsSolver(){
+	public static final GpTsSolver makeGpTsSolver(Double bandwidth){
 		return new GpTsSolver(
-				SimilarityGpFactory.makeZeroPriorSimilarityGpProcess());
+				SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),bandwidth);
 	}
 	
-	public static final GpUcbSolver makeGpUcbSolver(double power){
+	public static final GpUcbSolver makeGpUcbSolver(double power,Double bandwidth){
 		return new GpUcbSolver(
-				SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),power);
+				SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),power,bandwidth);
 	}
 }

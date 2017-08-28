@@ -14,15 +14,16 @@ import random_processes.SimilarityGaussianProcess;
 public abstract class GpIndexSolver extends IndexSolver {
 	protected SimilarityGaussianProcess myProcess;
 	
-	public GpIndexSolver(SimilarityGaussianProcess my_process) {
-		super();
+	public GpIndexSolver(SimilarityGaussianProcess my_process, double bandwidth) {
+		super(bandwidth);
 		this.myProcess = my_process;
 	}
 	
 	@Override
-	public void addHistory(RealVector context, SimpleTmiAction action, Double outcome) {
-		super.addHistory(context, action, outcome);
-		myProcess.addEvaluation(action, context, outcome);
+	public void addHistory(RealVector distances, SimpleTmiAction action, Double outcome) {
+		super.addHistory(distances, action, outcome);
+		RealVector similarities = distancesToSimilarities(distances);
+		myProcess.addEvaluation(action, similarities, outcome);
 	}
 	
 	@Override

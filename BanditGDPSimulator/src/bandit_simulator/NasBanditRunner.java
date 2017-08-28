@@ -49,7 +49,7 @@ public class NasBanditRunner {
 
 		// This gives the similarities between the new states and the historical
 		// states
-		Iterator<RealVector> similarities = myInstance.getSimilarities().iterator();
+		Iterator<RealVector> similarities = myInstance.getUnseenDistances().iterator();
 
 		// This is the list of actions that we will choose from
 		List<SimpleTmiAction> actionList = new ArrayList<SimpleTmiAction>(timeHorizon);
@@ -68,7 +68,7 @@ public class NasBanditRunner {
 			allSimilarities.add(nextContext);
 			// Use our bandit solving method to generate the tmi.
 			SimpleTmiAction nextAction = myBandit.suggestAction(nextContext, timeHorizon - i);
-			System.out.println(nextAction);
+			//System.out.println(nextAction);
 			// Calculate our reward
 			double reward = rewardFunction.apply(nextState, nextAction);
 			// Pass the reward to the bandit

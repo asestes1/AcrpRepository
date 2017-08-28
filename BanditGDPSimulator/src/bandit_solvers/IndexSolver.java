@@ -8,12 +8,12 @@ import org.apache.commons.math3.linear.RealVector;
 import bandit_objects.SimpleTmiAction;
 
 public abstract class IndexSolver extends SimilarityBanditSolver {
-	public IndexSolver() {
-		super();
+	public IndexSolver(double bandwidth) {
+		super(bandwidth);
 	}
 	@Override
-	public final SimpleTmiAction suggestAction(RealVector similarities, int remainingTime) {
-		Map<SimpleTmiAction,Double> myValues = getIndices(similarities, remainingTime);
+	public final SimpleTmiAction suggestAction(RealVector distances, int remainingTime) {
+		Map<SimpleTmiAction,Double> myValues = getIndices(distances, remainingTime);
 		Iterator<SimpleTmiAction> pointIter = myValues.keySet().iterator();
 		
 		double bestOutcome = Double.NEGATIVE_INFINITY;

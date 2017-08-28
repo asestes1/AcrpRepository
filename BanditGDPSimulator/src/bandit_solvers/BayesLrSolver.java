@@ -33,6 +33,7 @@ public abstract class BayesLrSolver extends IndexSolver {
 	public BayesLrSolver(int basis_function_dimension,
 			Function<SimpleTmiAction,RealVector> basis_function,
 			RealMatrix priorCovMatrix) {
+		super(1.0);
 		this.basisFunctionDimension = basis_function_dimension;
 		this.basisFunction = basis_function;
 		this.priorCovMatrix = priorCovMatrix;

@@ -23,14 +23,14 @@ public class NasBanditInstance implements Immutable, Serializable {
 
 	private static final long serialVersionUID = -1218409151536156281L;
 	private final List<DefaultState> unseenStates;
-	private final List<RealVector> similarities;
+	private final List<RealVector> unseenDistances;
 	private final List<Double> unseenBaseOutcome;
 	private final NasBanditOutcome historicalOutcomes;
 
-	public NasBanditInstance(List<DefaultState> unseenContextStates, List<RealVector> similarities,List<Double> unseenBaseOutcome,
+	public NasBanditInstance(List<DefaultState> unseenContextStates, List<RealVector> unseenDistances,List<Double> unseenBaseOutcome,
 			NasBanditOutcome historicalOutcomes) {
 		this.unseenStates = new ArrayList<DefaultState>(unseenContextStates);
-		this.similarities = new ArrayList<RealVector>(similarities);
+		this.unseenDistances = new ArrayList<RealVector>(unseenDistances);
 		this.unseenBaseOutcome = unseenBaseOutcome;
 		this.historicalOutcomes = historicalOutcomes;
 	}
@@ -65,8 +65,8 @@ public class NasBanditInstance implements Immutable, Serializable {
 		return unseenStates.size();
 	}
 
-	public List<RealVector> getSimilarities() {
-		return new ArrayList<RealVector>(similarities);
+	public List<RealVector> getUnseenDistances() {
+		return new ArrayList<RealVector>(unseenDistances);
 	}
 	
 	

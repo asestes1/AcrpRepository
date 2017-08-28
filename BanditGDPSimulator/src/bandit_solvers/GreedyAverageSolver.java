@@ -23,8 +23,8 @@ import bandit_objects.SimpleTmiAction;
 public class GreedyAverageSolver extends IndexSolver {
 	private final BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmiComparer;
 	
-	public GreedyAverageSolver(BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmi_comparer) {
-		super();
+	public GreedyAverageSolver(BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmi_comparer, Double bandwidth) {
+		super(bandwidth);
 		this.tmiComparer = tmi_comparer;
 	}
 	
@@ -34,7 +34,7 @@ public class GreedyAverageSolver extends IndexSolver {
 	}
 	
 	@Override
-	public Map<SimpleTmiAction,Double> getIndices(RealVector context_sims, int remaining_time) {
+	public Map<SimpleTmiAction,Double> getIndices(RealVector distances, int remaining_time) {
 		Map<SimpleTmiAction,Double> estimates = new HashMap<SimpleTmiAction,Double>();
 		
 		int historyLength = actionHistory.size();
@@ -57,7 +57,7 @@ public class GreedyAverageSolver extends IndexSolver {
 				SimpleTmiAction otherAction = compareChoiceIter.next();
 				double actionSimilarity = 
 						tmiComparer.apply(nextAction,otherAction);
-				double contextSimilarity = contextIter.next().get(i);
+				double contextSimilarity = distanceToSimilarity(contextIter.next().get(i));
 				double reward = rewardIter.next();
 				weightedSum += actionSimilarity*contextSimilarity*reward;
 				totalWeight += actionSimilarity*contextSimilarity;

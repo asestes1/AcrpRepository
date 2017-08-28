@@ -156,8 +156,9 @@ public final class BanditRunFactory {
 					myTmiActions.put(myDate, new SimpleTmiAction(rate, startTimeMinute, duration, scope));
 				} else if (gsValid) {
 					myTmiActions.put(myDate, new SimpleTmiAction(startTimeMinute, duration, scope));
-
+					System.out.println("TEST B");
 				} else {
+					System.out.println("TEST A");
 					myTmiActions.put(myDate, new SimpleTmiAction(false));
 				}
 			} else {
@@ -174,8 +175,6 @@ public final class BanditRunFactory {
 		List<T> myFirstObjects = new ArrayList<T>();
 		List<T> mySecondObjects = new ArrayList<T>();
 		int numObjects = objects.size();
-		System.out.println(numObjects);
-		System.out.println(size1 + size2);
 		for (int i = 0; i < size1 + size2; i++) {
 			int nextInt = random.nextInt(numObjects - i);
 			T nextObject = myList.get(nextInt);
@@ -222,7 +221,7 @@ public final class BanditRunFactory {
 
 	public static void makeNoOutcomeDayPools(File capacityFile, File tmiFile, File distanceFile, File trainTmiFile,
 			File testTmiFile, File trainNoTmiFile, File testNoTmiFile, String adlDirName, String adlFilePrefix,
-			DateTimeZone timeZone, int startHour, int runHours, FlightHandler myFlightHandler) throws IOException {
+			DateTimeZone timeZone, int startHour, int runHours, FlightHandler myFlightHandler, boolean gsValid) throws IOException {
 		System.out.println("Reading capacity file");
 		Map<LocalDate, Map<Integer, IntegerDistribution>> myCapacityDistributions = BanditRunFactory
 				.parseCapacityFile(capacityFile);
@@ -232,8 +231,7 @@ public final class BanditRunFactory {
 
 		// Read TMIs for each day
 		System.out.println("Reading tmi file.");
-		Map<LocalDate, SimpleTmiAction> myTmiActions = BanditRunFactory.parseTmiFile(tmiFile, true);
-		System.out.println("Total num TMIs: " + myTmiActions.keySet().size());
+		Map<LocalDate, SimpleTmiAction> myTmiActions = BanditRunFactory.parseTmiFile(tmiFile, gsValid);
 		// Convert capacities into states
 		System.out.println("Converting capacities into states.");
 		Map<LocalDate, DefaultState> myStates = new HashMap<LocalDate, DefaultState>();
@@ -376,11 +374,7 @@ public final class BanditRunFactory {
 		}
 		return outcomeMap;
 	}
-	// Set<LocalDate> noTmiDates = myDistances.keySet().removeAll(tmiDates);
 
-	public static double distanceToSimilarity(double distance, double bandwidth) {
-		return Math.exp(-Math.pow(distance / bandwidth, 2.0) / 2);
-	}
 
 	public static DefaultState makeStateFromCapacities(LocalDate date, Map<Integer, IntegerDistribution> hourMap,
 			int startHour, int runHours, String adlDirName, String adlFilePrefix, FlightHandler myFlightHandler,
@@ -455,8 +449,8 @@ public final class BanditRunFactory {
 				Map<LocalDate, Double> myDistanceRow = myDistances.get(initialDate);
 				for (int j = 0; j < i; j++) {
 					LocalDate otherDate =oldDateIter.next();
-					double similarity = distanceToSimilarity(myDistanceRow.get(otherDate), bandwidth);
-					myContext.setEntry(j, similarity);
+					double distance = myDistanceRow.get(otherDate);
+					myContext.setEntry(j, distance);
 				}
 
 				ImmutableTriple<DefaultState,SimpleTmiAction, Double> myActionOutcomePair = allPool.get(initialDate);

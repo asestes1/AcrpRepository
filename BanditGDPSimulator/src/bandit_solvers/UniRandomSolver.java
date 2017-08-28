@@ -30,6 +30,7 @@ public class UniRandomSolver extends SimilarityBanditSolver{
 	private static final int DEFAULT_RATE_HIGH = 50;
 	
 	public UniRandomSolver() {
+		super(1.0);
 		int[] tmi_types = {GDP_TYPE,GS_TYPE,NO_ACTION_TYPE};
 		double[] probs = {1.0,1.0,1.0};
 		tmiDistribution = new EnumeratedIntegerDistribution(tmi_types, probs);
@@ -43,7 +44,7 @@ public class UniRandomSolver extends SimilarityBanditSolver{
 	}
 	
 	@Override
-	public SimpleTmiAction suggestAction(RealVector similarities, int remainingTime) throws InvalidAlgorithmParameterException {
+	public SimpleTmiAction suggestAction(RealVector distances, int remainingTime) throws InvalidAlgorithmParameterException {
 		int chosenTmiType = tmiDistribution.sample();
 		if(chosenTmiType == NO_ACTION_TYPE){
 			return new SimpleTmiAction();

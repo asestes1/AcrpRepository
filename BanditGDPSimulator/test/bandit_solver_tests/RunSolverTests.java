@@ -51,31 +51,31 @@ public class RunSolverTests {
 
 		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparer = GaussianTmiComparerFactory
 				.makeDefaultTmiComparer();
-		GreedyAverageSolver mySolver = new GreedyAverageSolver(tmiComparer);
+		GreedyAverageSolver mySolver = new GreedyAverageSolver(tmiComparer,1.0);
 		BanditOutcome myOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction, myInstance,
 				mySolver, 10);
 		System.out.println(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myOutcome,
 				myInstance.getHistoricalOutcomes().getActionSet()));
 
-		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, 10);
+		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, 10,1.0);
 		BanditOutcome myZoomOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 				myInstance, myZoomSolver, 10);
 		System.out.println(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myZoomOutcome,
 				myInstance.getHistoricalOutcomes().getActionSet()));
 
-		GpGreedySolver myGreedySolver = new GpGreedySolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess());
+		GpGreedySolver myGreedySolver = new GpGreedySolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),1.0);
 		BanditOutcome myGreedyOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 				myInstance, myGreedySolver, 10);
 		System.out.println(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myGreedyOutcome,
 				myInstance.getHistoricalOutcomes().getActionSet()));
 
-		GpUcbSolver myGpUcbSolver = new GpUcbSolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(), 0.0);
+		GpUcbSolver myGpUcbSolver = new GpUcbSolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(), 0.0,1.0);
 		BanditOutcome myGpUcbOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 				myInstance, myGpUcbSolver, 10);
 		System.out.println(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myGpUcbOutcome,
 				myInstance.getHistoricalOutcomes().getActionSet()));
 
-		GpTsSolver myGpTsSolver = new GpTsSolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess());
+		GpTsSolver myGpTsSolver = new GpTsSolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),1.0);
 		BanditOutcome myGpTsOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 				myInstance, myGpTsSolver, 10);
 		System.out.println(myGpTsOutcome);
@@ -151,7 +151,7 @@ public class RunSolverTests {
 
 			BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparer = GaussianTmiComparerFactory
 					.makeDefaultTmiComparer();
-			GreedyAverageSolver mySolver = new GreedyAverageSolver(tmiComparer);
+			GreedyAverageSolver mySolver = new GreedyAverageSolver(tmiComparer,1.0);
 			BanditOutcome myOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction, myInstance,
 					mySolver, runLength);
 			avgRegretStats.addValue(SimilarityBanditRunner
@@ -161,7 +161,7 @@ public class RunSolverTests {
 					.calculateRewardStats(myMeanFunction, myOutcome, myInstance.getHistoricalOutcomes().getActionSet())
 					.getMean());
 
-			ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, runLength);
+			ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, runLength,1.0);
 			BanditOutcome myZoomOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 					myInstance, myZoomSolver, runLength);
 			zoomRegretStats.addValue(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myZoomOutcome,
@@ -170,7 +170,7 @@ public class RunSolverTests {
 					myInstance.getHistoricalOutcomes().getActionSet()).getMean());
 
 			GpGreedySolver myGpGreedySolver = new GpGreedySolver(
-					SimilarityGpFactory.makeZeroPriorSimilarityGpProcess());
+					SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),1.0);
 			BanditOutcome myGpGreedyOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 					myInstance, myGpGreedySolver, runLength);
 			gpGrRegretStats.addValue(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myGpGreedyOutcome,
@@ -178,7 +178,7 @@ public class RunSolverTests {
 			gpGrOutcomeStats.addValue(SimilarityBanditRunner.calculateRewardStats(myMeanFunction, myGpGreedyOutcome,
 					myInstance.getHistoricalOutcomes().getActionSet()).getMean());
 
-			GpUcbSolver myGpUcbSolver = new GpUcbSolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(), 0.0);
+			GpUcbSolver myGpUcbSolver = new GpUcbSolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(), 0.0,1.0);
 			BanditOutcome myGpUcbOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 					myInstance, myGpUcbSolver, runLength);
 			gpUcbRegretStats.addValue(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myGpUcbOutcome,
@@ -186,7 +186,7 @@ public class RunSolverTests {
 			gpUcbOutcomeStats.addValue(SimilarityBanditRunner.calculateRewardStats(myMeanFunction, myGpUcbOutcome,
 					myInstance.getHistoricalOutcomes().getActionSet()).getMean());
 
-			GpTsSolver myGpTsSolver = new GpTsSolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess());
+			GpTsSolver myGpTsSolver = new GpTsSolver(SimilarityGpFactory.makeZeroPriorSimilarityGpProcess(),1.0);
 			BanditOutcome myGpTsOutcome = SimilarityBanditRunner.runBandit(myRewardFunction, mySimilarityFunction,
 					myInstance, myGpTsSolver, runLength);
 			gpTsRegretStats.addValue(SimilarityBanditRunner.calculateRegretStats(myMeanFunction, myGpTsOutcome,

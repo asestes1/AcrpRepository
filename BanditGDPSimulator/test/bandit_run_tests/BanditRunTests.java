@@ -58,11 +58,18 @@ import util_random.ConstantDistribution;
 import util_random.Distribution;
 
 public class BanditRunTests {
-	public static final File instanceFile1 = new File(
+	public static final File instanceFileBoth = new File(
 			"C:/Users/Alex/Documents/Research/ACRP Research/nasBanditInstance1.out");
+	public static final File instanceFileTMIs = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/nasBanditInstanceTMIs.out");
+
+	public static final File instanceFileBothTest = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/nasBanditInstanceBothTest.out");
+	public static final File instanceFileTmisTest = new File(
+			"C:/Users/Alex/Documents/Research/ACRP Research/nasBanditInstanceTMIsTest.out");
 	public static final DateTimeZone ewrTimeZone = DateTimeZone.forID("America/New_York");
-	public static final double rewardMean = -1102.2190280300927;
-	public static final double rewardVar = 904567.0701894417;
+	public static final double rewardMean = -1095.6659651356588;
+	public static final double rewardStdDev = 642.5849763527685;
 
 	// Files storing pools of days with no outcomes
 	public static final File testNoOutcomeTmiFile = new File(
@@ -101,7 +108,7 @@ public class BanditRunTests {
 	public static final File distanceFile = new File("TestFiles/CapacityFiles/surv_dist_demoData_Dep6_v2_2.csv");
 	// public static final File tmiFile = new
 	// File("C:/Users/Alex/Documents/Research/ACRP Research/BanditTmiData.csv");
-	public static final File tmiFile = new File("C:/Users/Alex/Documents/Research/ACRP Research/BanditGdpData.csv");
+	public static final File tmiFile = new File("C:/Users/Alex/Documents/Research/ACRP Research/BanditTmiData.csv");
 
 	@Test
 	public void testTmiFileRead() throws IOException {
@@ -180,10 +187,10 @@ public class BanditRunTests {
 		// Read capacity distances for each day
 		System.out.println("Reading distance file.");
 		Map<LocalDate, Map<LocalDate, Double>> myDistances = BanditRunFactory.parseDistanceFile(distanceFile);
-		
+
 		Set<LocalDate> availableDates = new HashSet<LocalDate>(myCapacityDistributions.keySet());
 		availableDates.retainAll(myDistances.keySet());
-		
+
 		Set<LocalDate> myDates = BanditRunFactory.getValidDates(myTmiActions, myCapacityDistributions.keySet());
 		for (LocalDate date : myDates) {
 			if (!myTmiActions.containsKey(date)) {
@@ -219,7 +226,7 @@ public class BanditRunTests {
 		int runHours = 14;
 		BanditRunFactory.makeNoOutcomeDayPools(capacityFile, tmiFile, distanceFile, trainNoOutcomeTmiFile,
 				testNoOutcomeTmiFile, trainNoOutcomeNoTmiFile, testNoOutcomeNoTmiFile, adlDirName, adlFilePrefix,
-				ewrTimeZone, startHour, runHours, myFlightHandler);
+				ewrTimeZone, startHour, runHours, myFlightHandler, false);
 		@SuppressWarnings("unchecked")
 		Map<LocalDate, DefaultState> trainTmis = (Map<LocalDate, DefaultState>) BanditRunFactory
 				.readObjectFromFile(trainNoOutcomeTmiFile);
@@ -251,7 +258,7 @@ public class BanditRunTests {
 	@Test
 	public void testMakeInstances() throws ClassNotFoundException, IOException {
 		BanditRunFactory.writeObjectToFile(BanditRunFactory.createInstancesFromPool(distanceFile, trainHistTmiFile,
-				trainNoTmiFile, 50, 129, 129, 200, 5, 1.0), instanceFile1);
+				trainNoTmiFile, 50, 129, 340, 200, 7, 1.0), instanceFileBoth);
 	}
 
 	private RunStateFunction makeDayRunner() {
@@ -274,13 +281,33 @@ public class BanditRunTests {
 	public void testReadOutcomes() throws Exception {
 		@SuppressWarnings("unchecked")
 		Map<LocalDate, ImmutableTriple<DefaultState, SimpleTmiAction, Double>> myOutcomes = (Map<LocalDate, ImmutableTriple<DefaultState, SimpleTmiAction, Double>>) BanditRunFactory
-				.readObjectFromFile(trainRandTmiFile);
+				.readObjectFromFile(trainHistTmiFile);
+
+		DescriptiveStatistics myOutcomeStats = new DescriptiveStatistics();
+		DescriptiveStatistics myTmiRateStats = new DescriptiveStatistics();
+		DescriptiveStatistics myTmiRadiusStats = new DescriptiveStatistics();
+		DescriptiveStatistics myTmiStartStats = new DescriptiveStatistics();
+		DescriptiveStatistics myTmiDurationStats = new DescriptiveStatistics();
+
 		for (Entry<LocalDate, ImmutableTriple<DefaultState, SimpleTmiAction, Double>> entry : myOutcomes.entrySet()) {
-			System.out.println(entry.getKey());
-			System.out.println(entry.getValue().getLeft().getCurrentTime());
-			System.out.println(entry.getValue().getMiddle());
-			System.out.println(entry.getValue().getRight());
+			myOutcomeStats.addValue(entry.getValue().getRight());
+			SimpleTmiAction myAction = entry.getValue().getMiddle();
+			myTmiRateStats.addValue(myAction.getRate());
+			myTmiRadiusStats.addValue(myAction.getRadius());
+			myTmiStartStats.addValue(myAction.getStartTimeMin());
+			myTmiDurationStats.addValue(myAction.getDurationMin());
+			// System.out.println(entry.getKey());
+			// System.out.println(entry.getValue().getLeft().getCurrentTime());
+			// System.out.println(entry.getValue().getMiddle());
+			// System.out.println(entry.getValue().getRight());
 		}
+		System.out.println("Mean reward: " + myOutcomeStats.getMean());
+		System.out.println("Standard deviation: " + myOutcomeStats.getStandardDeviation());
+		System.out.println("Rate standard dev: " + myTmiRateStats.getStandardDeviation());
+		System.out.println("Radius standard dev: " + myTmiRadiusStats.getStandardDeviation());
+		System.out.println("Start standard dev: " + myTmiStartStats.getStandardDeviation());
+		System.out.println("Euration standard dev: " + myTmiDurationStats.getStandardDeviation());
+
 	}
 
 	@Test
@@ -311,24 +338,85 @@ public class BanditRunTests {
 	}
 
 	@Test
-	public void runBanditTest() throws Exception {
-		int numHistory = 150;
-		int numRun = 5;
+	public void runParameterTuningTest() throws Exception {
+		int numHistory = 200;
+		int numRun = 7;
 
-		// Choose delay distributions and make the flight handler
-		// Distribution<Duration> depDelayDistribution = new
-		// UniformDurationDistribution(-5 * 60, 15 * 60,
-		// Duration.standardSeconds(1));
-		// Distribution<Duration> arrDelayDistribution = new
-		// UniformDurationDistribution(-15 * 60, 15 * 60,
-		// Duration.standardSeconds(1));
 		RunStateFunction myNasRunner = makeDayRunner();
-
 		System.out.println("Reading instances");
 		@SuppressWarnings("unchecked")
 		List<NasBanditInstance> myInstances = (List<NasBanditInstance>) BanditRunFactory
-				.readObjectFromFile(instanceFile1);
-		List<SimilarityBanditSolver> mySolvers = makeListSolvers(numRun, numHistory);
+				.readObjectFromFile(instanceFileBoth);
+		double tmiBandwidth = 20.0;
+		double[] bandwidths = { 1.0, 2.0, 5.0, 10.0, 20.0 };
+		for (int i = 0; i < 5; i++) {
+			double contextBandwidth = bandwidths[i];
+			System.out.println("TMI Bandwidth: " + tmiBandwidth);
+			System.out.println("Context Bandwidth: " + contextBandwidth);
+			List<SimilarityBanditSolver> mySolvers = makeListSolvers(numRun, numHistory,tmiBandwidth,contextBandwidth);
+
+			List<DescriptiveStatistics> myRewardStatList = new LinkedList<DescriptiveStatistics>();
+			List<DescriptiveStatistics> myImprovementStatList = new LinkedList<DescriptiveStatistics>();
+			for (SimilarityBanditSolver solver : mySolvers) {
+				DescriptiveStatistics myRewardStats = new DescriptiveStatistics();
+				DescriptiveStatistics myImprovementStats = new DescriptiveStatistics();
+
+				for (NasBanditInstance instance : myInstances) {
+
+					DescriptiveStatistics instanceStatistics = new DescriptiveStatistics();
+					for (Double outcome : instance.getUnseenBaseOutcome()) {
+						instanceStatistics.addValue(outcome);
+					}
+
+					NasBanditOutcome myOutcome = NasBanditRunner.runBandit(myNasRunner, instance, solver, numRun);
+					myRewardStats.addValue(NasBanditRunner.calculateRewardStats(myOutcome).getSum());
+					myImprovementStats.addValue(
+							NasBanditRunner.calculateRewardStats(myOutcome).getSum() - instanceStatistics.getSum());
+
+					solver.reset();
+				}
+				myRewardStatList.add(myRewardStats);
+				myImprovementStatList.add(myImprovementStats);
+			}
+
+			DescriptiveStatistics baseStats = new DescriptiveStatistics();
+			for (NasBanditInstance instance : myInstances) {
+				DescriptiveStatistics instanceStatistics = new DescriptiveStatistics();
+				for (Double outcome : instance.getUnseenBaseOutcome()) {
+					instanceStatistics.addValue(outcome);
+				}
+				baseStats.addValue(instanceStatistics.getSum());
+			}
+			System.out.println("Rewards: ");
+			System.out.println("Base solution: " + baseStats.getMean() + " (" + baseStats.getStandardDeviation() + ")");
+			int outerIterNum = 0;
+			for (DescriptiveStatistics stats : myRewardStatList) {
+				System.out.println(
+						"Solver " + outerIterNum + ": " + stats.getMean() + " (" + stats.getStandardDeviation() + ")");
+				outerIterNum++;
+			}
+
+			System.out.println("Improvement over base solution: ");
+			outerIterNum = 0;
+			for (DescriptiveStatistics stats : myImprovementStatList) {
+				System.out.println(
+						"Solver " + outerIterNum + ": " + stats.getMean() + " (" + stats.getStandardDeviation() + ")");
+				outerIterNum++;
+			}
+		}
+	}
+
+	@Test
+	public void runBanditTest() throws Exception {
+		int numHistory = 100;
+		int numRun = 7;
+
+		RunStateFunction myNasRunner = makeDayRunner();
+		System.out.println("Reading instances");
+		@SuppressWarnings("unchecked")
+		List<NasBanditInstance> myInstances = (List<NasBanditInstance>) BanditRunFactory
+				.readObjectFromFile(instanceFileBothTest);
+		List<SimilarityBanditSolver> mySolvers = makeBothTunedListSolvers(numRun, numHistory);
 
 		int outerIterNum = 0;
 		List<DescriptiveStatistics> myRewardStatList = new LinkedList<DescriptiveStatistics>();
@@ -345,11 +433,11 @@ public class BanditRunTests {
 					instanceStatistics.addValue(outcome);
 				}
 
-				System.out.println("Running solver " + outerIterNum + ", instance: " + innerIterNum);
+				System.out.println("Running solver " + outerIterNum + ",instance: " + innerIterNum);
 				NasBanditOutcome myOutcome = NasBanditRunner.runBandit(myNasRunner, instance, solver, numRun);
-				myRewardStats.addValue(NasBanditRunner.calculateRewardStats(myOutcome).getMean());
+				myRewardStats.addValue(NasBanditRunner.calculateRewardStats(myOutcome).getSum());
 				myImprovementStats.addValue(
-						NasBanditRunner.calculateRewardStats(myOutcome).getMean() - instanceStatistics.getMean());
+						NasBanditRunner.calculateRewardStats(myOutcome).getSum() - instanceStatistics.getSum());
 
 				solver.reset();
 				innerIterNum++;
@@ -358,14 +446,13 @@ public class BanditRunTests {
 			myImprovementStatList.add(myImprovementStats);
 			outerIterNum++;
 		}
-
 		DescriptiveStatistics baseStats = new DescriptiveStatistics();
 		for (NasBanditInstance instance : myInstances) {
 			DescriptiveStatistics instanceStatistics = new DescriptiveStatistics();
 			for (Double outcome : instance.getUnseenBaseOutcome()) {
 				instanceStatistics.addValue(outcome);
 			}
-			baseStats.addValue(instanceStatistics.getMean());
+			baseStats.addValue(instanceStatistics.getSum());
 		}
 		System.out.println("Rewards: ");
 		System.out.println("Base solution: " + baseStats.getMean() + " (" + baseStats.getStandardDeviation() + ")");
@@ -385,30 +472,93 @@ public class BanditRunTests {
 		}
 	}
 
-	private List<SimilarityBanditSolver> makeListSolvers(int numRun, int numHistory) {
+	private List<SimilarityBanditSolver> makeTmiTunedListSolvers(int numRun, int numHistory) {
 		List<SimilarityBanditSolver> mySolvers = new ArrayList<SimilarityBanditSolver>();
-
-		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparer = GaussianTmiComparerFactory
-				.makeDefaultTmiComparer();
+		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparerForZoom = GaussianTmiComparerFactory
+				.makeDefaultTmiComparer(20.0);
+		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparerForAvg = GaussianTmiComparerFactory
+				.makeDefaultTmiComparer(1.0);
 		DoNothingSolver myDoNothingSolver = new DoNothingSolver();
-		GreedyAverageSolver mySolver = new GreedyAverageSolver(tmiComparer);
-		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, numRun + numHistory);
-		double lowerBound = rewardMean - 2 * Math.sqrt(rewardVar);
+		GreedyAverageSolver myGreedyAvgSolver = new GreedyAverageSolver(tmiComparerForAvg, 2.0);
+		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparerForZoom, 1.5, numRun + numHistory,
+				1.0);
+		double mean = rewardMean - 3 * rewardStdDev;
+		double priorCov = Math.pow(rewardStdDev, 2.0);
 		GpGreedySolver myGreedySolver = new GpGreedySolver(
-				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(lowerBound, rewardVar));
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, 20.0), 2.0);
 		GpUcbSolver myGpUcbSolver = new GpUcbSolver(
-				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(lowerBound, rewardVar), 0.0);
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, 20.0), 0.0, 2.0);
 		GpTsSolver myGpTsSolver = new GpTsSolver(
-				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(lowerBound, rewardVar));
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, 2.0), 2.0);
 		RandomHistoryBanditSolver myRandomSolver = new RandomHistoryBanditSolver();
 		mySolvers.add(myDoNothingSolver);
-		mySolvers.add(mySolver);
+		mySolvers.add(myGreedyAvgSolver);
 		mySolvers.add(myZoomSolver);
 		mySolvers.add(myGreedySolver);
 		mySolvers.add(myGpUcbSolver);
 		mySolvers.add(myGpTsSolver);
 		mySolvers.add(myRandomSolver);
+		return mySolvers;
+	}
+	
+	private List<SimilarityBanditSolver> makeBothTunedListSolvers(int numRun, int numHistory) {
+		List<SimilarityBanditSolver> mySolvers = new ArrayList<SimilarityBanditSolver>();
+		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparerForZoom = GaussianTmiComparerFactory
+				.makeDefaultTmiComparer(10.0);
+		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparerForAvg = GaussianTmiComparerFactory
+				.makeDefaultTmiComparer(20.0);
+		DoNothingSolver myDoNothingSolver = new DoNothingSolver();
+		GreedyAverageSolver myGreedyAvgSolver = new GreedyAverageSolver(tmiComparerForAvg, 1.0);
+		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparerForZoom, 1.5, numRun + numHistory,
+				1.0);
+		double mean = rewardMean - 3 * rewardStdDev;
+		double priorCov = Math.pow(rewardStdDev, 2.0);
+		GpGreedySolver myGreedySolver = new GpGreedySolver(
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, 2.0), 10.0);
+		GpUcbSolver myGpUcbSolver = new GpUcbSolver(
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, 2.0), 0.0, 10.0);
+		GpTsSolver myGpTsSolver = new GpTsSolver(
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, 2.0), 10.0);
+		RandomHistoryBanditSolver myRandomSolver = new RandomHistoryBanditSolver();
+		//mySolvers.add(myDoNothingSolver);
+		//mySolvers.add(myGreedyAvgSolver);
+		//mySolvers.add(myZoomSolver);
+		mySolvers.add(myGreedySolver);
+		mySolvers.add(myGpUcbSolver);
+		mySolvers.add(myGpTsSolver);
+		mySolvers.add(myRandomSolver);
+		return mySolvers;
+	}
 
+	private List<SimilarityBanditSolver> makeListSolvers(int numRun, int numHistory, double tmiBandwidth,
+			double contextBandwidth) {
+		List<SimilarityBanditSolver> mySolvers = new ArrayList<SimilarityBanditSolver>();
+		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparer = GaussianTmiComparerFactory
+				.makeDefaultTmiComparer(tmiBandwidth);
+		// DoNothingSolver myDoNothingSolver = new DoNothingSolver();
+		GreedyAverageSolver myGreedyAvgSolver = new GreedyAverageSolver(tmiComparer, contextBandwidth);
+		ContextualZoomingSolver myZoomSolver = new ContextualZoomingSolver(tmiComparer, 1.5, numRun + numHistory,
+				contextBandwidth);
+		double mean = rewardMean - 3 * rewardStdDev;
+		double priorCov = Math.pow(rewardStdDev, 2.0);
+		GpGreedySolver myGreedySolver = new GpGreedySolver(
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, tmiBandwidth),
+				contextBandwidth);
+		GpUcbSolver myGpUcbSolver = new GpUcbSolver(
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, tmiBandwidth), 0.0,
+				contextBandwidth);
+		GpTsSolver myGpTsSolver = new GpTsSolver(
+				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, tmiBandwidth),
+				contextBandwidth);
+		// RandomHistoryBanditSolver myRandomSolver = new
+		// RandomHistoryBanditSolver();
+		// mySolvers.add(myDoNothingSolver);
+		mySolvers.add(myGreedyAvgSolver);
+		mySolvers.add(myZoomSolver);
+		mySolvers.add(myGreedySolver);
+		mySolvers.add(myGpUcbSolver);
+		mySolvers.add(myGpTsSolver);
+		// mySolvers.add(myRandomSolver);
 		return mySolvers;
 	}
 }

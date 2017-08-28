@@ -60,11 +60,13 @@ public class RunStateFunction implements BiFunctionEx<DefaultState, SimpleTmiAct
 				Flight.airQueueDelayID);
 		Duration groundDelay = MetricCalculator
 				.calculateTotalDurationField(finalState.getFlightState().getLandedFlights(), Flight.scheduledDelayID);
-		// System.out.println(action);
-		// System.out.println("Air: "+ airDelay);
-		// System.out.println("Ground: "+groundDelay);
+		System.out.println(action);
+		System.out.println("Air: "+ airDelay);
+		System.out.println("Ground: "+groundDelay);
 		Double totalDelay = airDelayWeight * (airDelay.getMillis() / (60 * 60 * 1000.0))
 				+ groundDelay.getMillis() / (60 * 60 * 1000.0);
+		System.out.println(totalDelay);
+
 		return -1 * totalDelay;
 	}
 

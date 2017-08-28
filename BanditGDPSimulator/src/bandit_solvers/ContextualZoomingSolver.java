@@ -21,8 +21,8 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 	protected final Integer timeHorizon;
 	
 	public ContextualZoomingSolver(BiFunction<SimpleTmiAction,SimpleTmiAction,Double> tmiComparer,
-			Double scaleR,int timeHorizon){
-		super();
+			Double scaleR,int timeHorizon,double bandwidth){
+		super(bandwidth);
 		this.contextActionBalls = new ArrayList<ContextActionBall>();
 		this.tmiComparer = tmiComparer;
 		this.scaleR = scaleR;
@@ -39,14 +39,14 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 	}
 	
 	@Override
-	public void addHistory(RealVector context, SimpleTmiAction action, Double outcome) {
-		if(context.getDimension() == 0){
+	public void addHistory(RealVector distances, SimpleTmiAction action, Double outcome) {
+		if(distances.getDimension() == 0){
 			ContextActionBall firstBall = new ContextActionBall(0, action, 1.0);
 			firstBall.addReward(outcome);
 			contextActionBalls.add(firstBall);
 		}else{
-			ContextActionBall bestBall = getBestBall(context,action);
-			updateLipschitzEstimate(context,action,outcome);
+			ContextActionBall bestBall = getBestBall(distances,action);
+			updateLipschitzEstimate(distances,action,outcome);
 			bestBall.addReward(outcome);
 			if(bestBall.getConf(timeHorizon, estimatedLipschitzFactor) < bestBall.getRadius()){
 				ContextActionBall newBall = new ContextActionBall(
@@ -54,18 +54,18 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 				contextActionBalls.add(newBall);
 			}
 		}
-		super.addHistory(context, action, outcome);
+		super.addHistory(distances, action, outcome);
 	}
 	
-	private void updateLipschitzEstimate(RealVector context, SimpleTmiAction action, Double outcome) {
+	private void updateLipschitzEstimate(RealVector distances, SimpleTmiAction action, Double outcome) {
 		int historyLength = contextHistory.size();
 		Iterator<SimpleTmiAction> actionIter = actionHistory.iterator();
 		Iterator<Double> rewardIter = rewardHistory.iterator();
 		for(int i=0;i < historyLength;i++){
 			double actionSimilarity = tmiComparer.apply(action, actionIter.next());
-			double distance = 1-actionSimilarity*context.getEntry(i);
-			if(distance > 0){
-				double estimatedFactor = scaleR*Math.abs(outcome-rewardIter.next())/distance ;
+			double combinedDistance = 1-actionSimilarity*distanceToSimilarity(distances.getEntry(i));
+			if(combinedDistance > 0){
+				double estimatedFactor = scaleR*Math.abs(outcome-rewardIter.next())/combinedDistance ;
 				if(estimatedFactor > estimatedLipschitzFactor){
 					estimatedLipschitzFactor = estimatedFactor;
 				}
@@ -74,7 +74,7 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 		
 	}
 
-	public Set<ContextActionBall> getRelevantBalls(RealVector similarities){
+	public Set<ContextActionBall> getRelevantBalls(RealVector distances){
 		Set<ContextActionBall> relevantBalls = new HashSet<ContextActionBall>();
 		Set<ContextActionBall> remainingBalls = 
 				new HashSet<ContextActionBall>(contextActionBalls);
@@ -89,7 +89,7 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 			Set<ContextActionBall> minRadiiSet = new HashSet<ContextActionBall>();
 			while(ballIter.hasNext()){
 				ContextActionBall nextBall = ballIter.next();
-				if(nextBall.contains(tmiComparer, nextAction, similarities)){
+				if(nextBall.contains(tmiComparer,new KernelFunction(), nextAction, distances)){
 					double radius = nextBall.getRadius();
 					if(radius < bestRadius){
 						minRadiiSet = new HashSet<ContextActionBall>();
@@ -105,7 +105,7 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 		return relevantBalls;
 	}
 	
-	public Set<ContextActionBall> getRelevantBalls(RealVector similarities,
+	public Set<ContextActionBall> getRelevantBalls(RealVector distances,
 			SimpleTmiAction givenAction){
 		Set<ContextActionBall> relevantBalls = new HashSet<ContextActionBall>();
 		Set<ContextActionBall> remainingBalls = 
@@ -116,7 +116,7 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 		Iterator<ContextActionBall> ballIter = contextActionBalls.iterator();
 		while(ballIter.hasNext()){
 			ContextActionBall nextBall = ballIter.next();
-			if(!nextBall.contains(tmiComparer, givenAction, similarities)){
+			if(!nextBall.contains(tmiComparer,new KernelFunction(), givenAction, distances)){
 				remainingBalls.remove(nextBall);
 			}
 		}
@@ -130,7 +130,7 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 			ballIter = remainingBalls.iterator();
 			while(ballIter.hasNext()){
 				ContextActionBall nextBall = ballIter.next();
-				if(nextBall.contains(tmiComparer, nextAction, similarities)){
+				if(nextBall.contains(tmiComparer,new KernelFunction(), nextAction, distances)){
 					double radius = nextBall.getRadius();
 					if(radius < bestRadius){
 						minRadiiSet = new HashSet<ContextActionBall>();
@@ -147,8 +147,7 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 		return relevantBalls;
 	}
 	
-	public ContextActionBall getBestBall(Set<ContextActionBall> relevantBalls,
-											RealVector similarities){
+	public ContextActionBall getBestBall(Set<ContextActionBall> relevantBalls){
 		Iterator<ContextActionBall> ballIter =relevantBalls.iterator();
 		double bestOverallIndex = Double.NEGATIVE_INFINITY;
 		ContextActionBall bestBall = null;
@@ -179,29 +178,29 @@ public class ContextualZoomingSolver extends SimilarityBanditSolver{
 		return bestBall;
 	}
 	
-	public ContextActionBall getBestBall(RealVector similarities){
-		Set<ContextActionBall> relevantBalls = getRelevantBalls(similarities);
-		return getBestBall(relevantBalls,similarities);
+	public ContextActionBall getBestBall(RealVector distances){
+		Set<ContextActionBall> relevantBalls = getRelevantBalls(distances);
+		return getBestBall(relevantBalls);
 		
 	}
 	
-	public ContextActionBall getBestBall(RealVector similarities, SimpleTmiAction action){
-		Set<ContextActionBall> relevantBalls = getRelevantBalls(similarities,action);
-		return getBestBall(relevantBalls,similarities);
+	public ContextActionBall getBestBall(RealVector distances, SimpleTmiAction action){
+		Set<ContextActionBall> relevantBalls = getRelevantBalls(distances,action);
+		return getBestBall(relevantBalls);
 	}
 
 	@Override
-	public SimpleTmiAction suggestAction(RealVector similarities, int remainingTime) throws Exception {
-		ContextActionBall bestBall = getBestBall(similarities);
-		return chooseActionFromBall(bestBall,similarities);
+	public SimpleTmiAction suggestAction(RealVector distances, int remainingTime) throws Exception {
+		ContextActionBall bestBall = getBestBall(distances);
+		return chooseActionFromBall(bestBall,distances);
 	}
 
-	private SimpleTmiAction chooseActionFromBall(ContextActionBall ball, RealVector similarities) {
+	private SimpleTmiAction chooseActionFromBall(ContextActionBall ball, RealVector distances) {
 		Iterator<SimpleTmiAction> myActionIter = actionHistory.iterator();
 		List<SimpleTmiAction> relevantActions = new ArrayList<SimpleTmiAction>();
 		while(myActionIter.hasNext()){
 			SimpleTmiAction nextAction = myActionIter.next();
-			if(ball.contains(tmiComparer, nextAction, similarities)){
+			if(ball.contains(tmiComparer,new KernelFunction(), nextAction, distances)){
 				relevantActions.add(nextAction);
 			}
 		}

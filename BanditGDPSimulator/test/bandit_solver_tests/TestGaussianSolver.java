@@ -18,9 +18,9 @@ public class TestGaussianSolver {
 	@Test
 	public void GpGreedyScopeTest(){
 		//GaussianKernel cov_func = new GaussianKernel(1,1);
-		GpGreedySolver myGreedySolver = GpSolverFactory.makeGpGreedySolver();
-		GpIndexSolver myUcbSolver = GpSolverFactory.makeGpUcbSolver();
-		GpIndexSolver myTsSolver = GpSolverFactory.makeGpTsSolver();
+		GpGreedySolver myGreedySolver = GpSolverFactory.makeGpGreedySolver(1.0);
+		GpIndexSolver myUcbSolver = GpSolverFactory.makeGpUcbSolver(1.0);
+		GpIndexSolver myTsSolver = GpSolverFactory.makeGpTsSolver(1.0);
 
 		GaussianKernel my_kernel = new GaussianKernel(1.0, 1);
 		List<RealVector> my_states = new ArrayList<RealVector>();

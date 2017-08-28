@@ -18,7 +18,7 @@ public class TestGreedyAverageSolver {
 	public void GpGreedyScopeTest(){
 		//GaussianKernel cov_func = new GaussianKernel(1,1);
 		GreedyAverageSolver myGreedySolver = new GreedyAverageSolver(
-				GaussianTmiComparerFactory.makeDefaultTmiComparer());
+				GaussianTmiComparerFactory.makeDefaultTmiComparer(),1.0);
 
 		GaussianKernel myKernel = new GaussianKernel(1.0, 1);
 		List<RealVector> my_states = new ArrayList<RealVector>();

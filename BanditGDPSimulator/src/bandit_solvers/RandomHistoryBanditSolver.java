@@ -10,10 +10,11 @@ public class RandomHistoryBanditSolver extends SimilarityBanditSolver{
 	private final Random numberGenerator;
 	
 	public RandomHistoryBanditSolver() {
+		super(1.0);
 		this.numberGenerator = new Random();
 	}
 	@Override
-	public SimpleTmiAction suggestAction(RealVector similarities, int remainingTime) throws Exception {
+	public SimpleTmiAction suggestAction(RealVector distances, int remainingTime) throws Exception {
 		int numActions = actionHistory.size();
 		return actionHistory.get(numberGenerator.nextInt(numActions));
 	}

@@ -11,23 +11,25 @@ import random_processes.SimilarityGaussianProcess;
 
 public class GpTsSolver extends GpIndexSolver{
 
-	public GpTsSolver(SimilarityGaussianProcess my_process) {
-		super(my_process);
+	public GpTsSolver(SimilarityGaussianProcess my_process,double bandwidth) {
+		super(my_process,bandwidth);
 	}
 	@Override
-	public Map<SimpleTmiAction, Double> getIndices(RealVector similarities, int remaining_time) {
+	public Map<SimpleTmiAction, Double> getIndices(RealVector distances, int remaining_time) {
+		RealVector similarities = distancesToSimilarities(distances);
+
 		Iterator<SimpleTmiAction> pastActions = actionHistory.iterator();
-		HashMap<SimpleTmiAction,Double> my_indices = new HashMap<SimpleTmiAction,Double>();
-		SimilarityGaussianProcess copy_my_process = new SimilarityGaussianProcess(myProcess);
+		HashMap<SimpleTmiAction,Double> myIndices = new HashMap<SimpleTmiAction,Double>();
+		SimilarityGaussianProcess copyMyProcess = new SimilarityGaussianProcess(myProcess);
 		while(pastActions.hasNext()){
-			SimpleTmiAction next_action = pastActions.next();
-			if(!my_indices.containsKey(next_action)){
+			SimpleTmiAction nextAction = pastActions.next();
+			if(!myIndices.containsKey(nextAction)){
 				double estimated_value = 
-						copy_my_process.evaluate(next_action, similarities);
-				my_indices.put(next_action, estimated_value);
+						copyMyProcess.evaluate(nextAction,similarities);
+				myIndices.put(nextAction, estimated_value);
 			}		
 		}
-		return my_indices;
+		return myIndices;
 	}
 
 }

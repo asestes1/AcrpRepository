@@ -57,7 +57,7 @@ public class GaussianKernel implements BiFunction<RealVector, RealVector, Double
 	
 	public GaussianKernel(double scale_factor, double bandwidth, RealVector activity) {
 		this.scale_factor = scale_factor;
-		this.bandwidth = 1;
+		this.bandwidth = bandwidth;
 		dimension = activity.getDimension();
 		kernel_matrix = new BlockRealMatrix(dimension, dimension);
 		for(int i = 0; i < dimension;i++){
