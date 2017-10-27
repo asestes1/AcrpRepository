@@ -49,16 +49,20 @@ public class DirectMHDynModel implements StateAction<DefaultState> {
 		List<Flight> sittingFlights = new ArrayList<Flight>(state.getFlightState().getSittingFlights());
 		List<ImmutablePair<Integer, Integer>> discretizedFlights = GDPPlanningHelper.discretizeFlights(sittingFlights,
 				timePeriodDuration, state.getCurrentTime());
+		System.out.println(discretizedFlights.size());
 		List<Integer> exemptFlights = GDPPlanningHelper.aggregateFlightCountsByFlightTimeField(
 				state.getFlightState().getAirborneFlights(), timePeriodDuration, gdpInterval, Flight.depETAFieldID);
+		System.out.println(exemptFlights);
 		List<DiscreteCapacityScenario> myScenarios = DiscreteScenarioUtilities
 				.discretizeScenarios(state.getCapacityState(), gdpInterval, timePeriodDuration);
+		System.out.println(myScenarios);
 		List<Set<Set<Integer>>> myScenarioPartition = DiscreteScenarioUtilities.buildDiscreteScenarioTree(
 				state.getCapacityState().getScenarios(), new DefaultCapacityComparer(), timePeriodDuration,
 				gdpInterval);
 		int worstScenario = DiscreteScenarioUtilities.getWorstScenario(myScenarios);
 		List<Integer> delays = new MHDynModel(groundCost, airCost).solveModel(discretizedFlights, exemptFlights,
 				myScenarios, myScenarioPartition, worstScenario);
+
 		SortedSet<Flight> newSittingFlights = new TreeSet<Flight>();
 		Iterator<Integer> myDelayIter = delays.iterator();
 		Iterator<Flight> myFlightIter = sittingFlights.iterator();

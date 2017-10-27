@@ -33,7 +33,28 @@ public class DirectHofkinModel implements StateAction<DefaultState> {
 	private final Comparator<Flight> flightComparator;
 	private final double groundCost;
 	private final double airCost;
+	private final double maxAirborne;
 
+	/**
+	 * Standard constructor
+	 * 
+	 * @param groundCost
+	 *            - the cost of one time unit of ground delay.
+	 * @param airCost
+	 *            - the cost of one time unit of air delay.
+	 * @throws GRBException
+	 */
+	public DirectHofkinModel(double groundCost, double airCost, double maxAirborne, Duration timePeriodDuration,
+			Function<DefaultState, Interval> myIntervalChooser, Comparator<Flight> flightComparator)
+					throws GRBException {
+		this.groundCost = groundCost;
+		this.airCost = airCost;
+		this.timePeriodDuration = timePeriodDuration;
+		this.myIntervalChooser = myIntervalChooser;
+		this.flightComparator = flightComparator;
+		this.maxAirborne = maxAirborne;
+	}
+	
 	/**
 	 * Standard constructor
 	 * 
@@ -51,6 +72,7 @@ public class DirectHofkinModel implements StateAction<DefaultState> {
 		this.timePeriodDuration = timePeriodDuration;
 		this.myIntervalChooser = myIntervalChooser;
 		this.flightComparator = flightComparator;
+		this.maxAirborne = HofkinModel.UNLIMITED;
 	}
 
 	@Override
@@ -64,11 +86,12 @@ public class DirectHofkinModel implements StateAction<DefaultState> {
 		for (int i = 0; i < scheduledFlights.size(); i++) {
 			numScheduledFlights.add(scheduledFlights.get(i).size());
 		}
+
 		List<Integer> exemptFlights = GDPPlanningHelper.aggregateFlightCountsByFlightTimeField(
 				state.getFlightState().getAirborneFlights(), timePeriodDuration, gdpInterval, Flight.depETAFieldID);
 		List<DiscreteCapacityScenario> myScenarios = DiscreteScenarioUtilities
 				.discretizeScenarios(state.getCapacityState(), gdpInterval, timePeriodDuration);
-		List<Integer> discretePaars = new HofkinModel(groundCost, airCost).solveModel(numScheduledFlights,
+		List<Integer> discretePaars = new HofkinModel(groundCost, airCost,maxAirborne).solveModel(numScheduledFlights,
 				exemptFlights, myScenarios);
 		PriorityQueue<Flight> myQueue = new PriorityQueue<Flight>(flightComparator);
 
@@ -138,6 +161,10 @@ public class DirectHofkinModel implements StateAction<DefaultState> {
 
 	public double getAirCost() {
 		return airCost;
+	}
+	
+	public double getMaxAirborne(){
+		return maxAirborne;
 	}
 
 }

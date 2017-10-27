@@ -61,6 +61,7 @@ public final class SimulationEngineRunner {
 				endCriteria = endCriteria.updateHistory(state);
 				updatedModules.add(ImmutablePair.of(newCriteria, myAction));
 				state=newState;
+				modules=updatedModules;
 			}
 			currentTime = currentTime.plus(timeStep);
 			if(verbosity >=1 ){

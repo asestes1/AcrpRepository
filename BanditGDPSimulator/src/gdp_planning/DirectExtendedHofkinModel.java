@@ -29,6 +29,8 @@ public class DirectExtendedHofkinModel implements StateAction<DefaultState> {
 	private final Comparator<Flight> flightComparator;
 	private final double groundCost;
 	private final double airCost;
+	private final double maxAirborne;
+	
 
 	/**
 	 * Standard constructor
@@ -47,6 +49,27 @@ public class DirectExtendedHofkinModel implements StateAction<DefaultState> {
 		this.timePeriodDuration = timePeriodDuration;
 		this.myIntervalChooser = myIntervalChooser;
 		this.flightComparator = flightComparator;
+		this.maxAirborne = ExtendedHofkinModel.UNLIMITED;
+	}
+	
+	/**
+	 * Standard constructor
+	 * 
+	 * @param groundCost
+	 *            - the cost of one time unit of ground delay.
+	 * @param airCost
+	 *            - the cost of one time unit of air delay.
+	 * @throws GRBException
+	 */
+	public DirectExtendedHofkinModel(double groundCost, double airCost, double maxAirborne, Duration timePeriodDuration,
+			Function<DefaultState, Interval> myIntervalChooser, Comparator<Flight> flightComparator)
+					throws GRBException {
+		this.groundCost = groundCost;
+		this.airCost = airCost;
+		this.timePeriodDuration = timePeriodDuration;
+		this.myIntervalChooser = myIntervalChooser;
+		this.flightComparator = flightComparator;
+		this.maxAirborne = maxAirborne;
 	}
 
 	@Override
@@ -90,7 +113,7 @@ public class DirectExtendedHofkinModel implements StateAction<DefaultState> {
 				gdpInterval);
 		int worstScenario = DiscreteScenarioUtilities.getWorstScenario(myScenarios);
 
-		List<List<Integer>> solution = new ExtendedHofkinModel(groundCost, airCost).solveModel(
+		List<List<Integer>> solution = new ExtendedHofkinModel(groundCost, airCost,maxAirborne).solveModel(
 				flightCountsByFlightTimeETA, flightTimes, exemptFlights, myScenarios, myScenarioPartition,
 				worstScenario);
 		PriorityQueue<Flight> myQueue = new PriorityQueue<Flight>(flightComparator);

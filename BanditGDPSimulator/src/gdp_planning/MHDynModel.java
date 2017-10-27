@@ -126,7 +126,7 @@ public class MHDynModel {
 		int numFlights = flights.size();
 		int numTimePeriods = exemptFlights.size();
 		int numScenarios = scenarios.size();
-
+		
 		GRBVar[][][] assignVar = new GRBVar[numFlights][numTimePeriods][numScenarios];
 		GRBVar[][] airVar = new GRBVar[numTimePeriods-1][numScenarios];
 
@@ -208,6 +208,7 @@ public class MHDynModel {
 			}
 			scenarioIndex++;
 		}
+		
 		//Add anti-anticipatory constraints
 		Iterator<Set<Set<Integer>>> partitionIter = scenarioPartition.iterator();
 		int time = 0;

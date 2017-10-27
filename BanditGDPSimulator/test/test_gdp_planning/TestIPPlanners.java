@@ -1,5 +1,13 @@
 package test_gdp_planning;
 
+import engine_factories.SimulationEngineFactory;
+import gdp_factories.GdpPlannerFactory;
+import gdp_planning.DirectExtendedHofkinModel;
+import gdp_planning.DirectHofkinModel;
+import gdp_planning.DirectMHDynModel;
+import gdp_planning.GDPPlanningHelper;
+import gdp_planning.StandardTmiPlanner;
+
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -9,6 +17,12 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import metrics.MetricCalculator;
+import metrics.PiecewiseLinearFunction;
+import model.SimulationEngineInstance;
+import model.SimulationEngineRunner;
+import model.StateAction;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -16,18 +30,6 @@ import org.joda.time.Duration;
 import org.joda.time.Interval;
 import org.junit.Test;
 
-import engine_factories.SimulationEngineFactory;
-import gdp_factories.GdpPlannerFactory;
-import gdp_planning.DirectExtendedHofkinModel;
-import gdp_planning.DirectHofkinModel;
-import gdp_planning.DirectMHDynModel;
-import gdp_planning.GDPPlanningHelper;
-import gdp_planning.StandardTmiPlanner;
-import metrics.MetricCalculator;
-import metrics.PiecewiseLinearFunction;
-import model.SimulationEngineInstance;
-import model.SimulationEngineRunner;
-import model.StateAction;
 import state_criteria.AllLandedCriteria;
 import state_criteria.AlwaysCriteria;
 import state_criteria.AtStartCriteriaFactory;

@@ -19,7 +19,9 @@ import java.util.List;
 public class HofkinModel implements DiscretePAARChooser{
 	private final double groundCost;
 	private final double airCost;
+	private final double maxAirborne;
 	private final GRBEnv myEnv ;
+	public static final double UNLIMITED = -1;
 
 	
 	/**
@@ -28,10 +30,11 @@ public class HofkinModel implements DiscretePAARChooser{
 	 * @param airCost - the cost of one time unit of air delay.
 	 * @throws GRBException 
 	 */
-	public HofkinModel(double groundCost, double airCost) throws GRBException{
+	public HofkinModel(double groundCost, double airCost, double maxAirborne) throws GRBException{
 		this.groundCost = groundCost;
 		this.airCost = airCost;
-		this.myEnv = new GRBEnv("hofkinLog.log");
+		this.maxAirborne = maxAirborne;
+		this.myEnv = new GRBEnv();
 	}
 	
 	/**
@@ -45,6 +48,8 @@ public class HofkinModel implements DiscretePAARChooser{
 			List<Integer> exemptFlights,
 			List<DiscreteCapacityScenario> scenarios) throws GRBException{
 	
+		System.out.println(numArriving);
+		System.out.println(maxAirborne);
 		//Set up the model
 		GRBModel model = setUpModel(numArriving,exemptFlights,scenarios);
 		//Solve the model
@@ -60,10 +65,14 @@ public class HofkinModel implements DiscretePAARChooser{
 	 * @param numTimePeriods - the number of time periods
 	 * @param model - the Gurobi model
 	 * @return - the PAARs from the solution of the model
-	 * @throws GRBException
+	 * @throws Exception 
 	 */
 	private List<Integer> getResults(int numTimePeriods, GRBModel model, List<Integer> exemptFlights)
 			throws GRBException {
+		int status = model.get(GRB.IntAttr.Status);
+		if(status == 3){
+			throw new GRBException("Model is infeasible.");
+		}
 		List<Integer> myList = new ArrayList<Integer>(numTimePeriods);
 		//Go through each time period
 		for(int i =0; i < numTimePeriods;i++){
@@ -121,8 +130,15 @@ public class HofkinModel implements DiscretePAARChooser{
 		for(int i =0; i < numTimePeriods-1; i++){		
 			for(int j = 0; j < numScenarios; j++){
 				double probability = scenarios.get(j).getProbability();
-				GRBVar airDelayVar = model.addVar(0.0, GRB.INFINITY, airCost*probability,
-						GRB.INTEGER, "A"+i+","+j);
+				GRBVar airDelayVar;
+				if(maxAirborne != UNLIMITED){
+					airDelayVar = model.addVar(0.0, maxAirborne, airCost*probability,
+							GRB.INTEGER, "A"+i+","+j);
+				}else{
+
+					airDelayVar = model.addVar(0.0, GRB.INFINITY, airCost*probability,
+							GRB.INTEGER, "A"+i+","+j);
+				}
 				arrivalFlowConstraints[i][j].addTerm(-1.0, airDelayVar);
 				arrivalFlowConstraints[i+1][j].addTerm(1.0, airDelayVar);
 			}
@@ -134,14 +150,32 @@ public class HofkinModel implements DiscretePAARChooser{
 			model.addConstr(departureFlowConstraints[i], GRB.EQUAL, -1.0*numArriving.get(i),"DF"+i);
 		}
 		
-		//Add arrival conservation of flow constraints
-		for(int i =0;i < numTimePeriods;i++){
-			for(int j =0; j < numScenarios;j++){
-				DiscreteCapacityScenario currentScenario = scenarios.get(j);
-				double capacity = currentScenario.getCapacity().get(i)-exemptFlights.get(i);
+		//Generate Capacity Vector from Capacities and Number of Arriving Flights
+		for(int j=0; j< numScenarios;j++){
+			DiscreteCapacityScenario currentScenario = scenarios.get(j);			
+			double excessFlights = 0.0;
+			for(int i=0;i<numTimePeriods-1;i++){
+				double capacity = currentScenario.getCapacity().get(i)-exemptFlights.get(i)-excessFlights;
+				if(capacity < 0.0){
+					excessFlights= -capacity;
+					capacity = 0.0;
+				}else{
+					excessFlights=0.0;
+					
+				}
 				model.addConstr(arrivalFlowConstraints[i][j], GRB.LESS_EQUAL,capacity,"AF"+i+","+j);
 			}
 		}
+		
+//		//Add arrival conservation of flow constraints
+//		for(int i =0;i < numTimePeriods-1;i++){
+//			for(int j =0; j < numScenarios;j++){
+//				DiscreteCapacityScenario currentScenario = scenarios.get(j);
+//				double capacity = currentScenario.getCapacity().get(i)-exemptFlights.get(i);
+//				System.out.println(capacity);
+//				model.addConstr(arrivalFlowConstraints[i][j], GRB.LESS_EQUAL,capacity,"AF"+i+","+j);
+//			}
+//		}
 		model.update();
 		return model;
 	}

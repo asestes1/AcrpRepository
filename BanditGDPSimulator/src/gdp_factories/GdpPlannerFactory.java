@@ -33,6 +33,7 @@ public final class GdpPlannerFactory {
 	public static DirectExtendedHofkinModel parseDirectExtendedHofkinModel(File input) throws Exception {
 		DirectHofkinModel myHofkinModel = parseDirectHofkinModel(new Scanner(input));
 		return new DirectExtendedHofkinModel(myHofkinModel.getGroundCost(), myHofkinModel.getAirCost(),
+				myHofkinModel.getMaxAirborne(),
 				myHofkinModel.getTimePeriodDuration(), myHofkinModel.getMyIntervalChooser(),
 				myHofkinModel.getFlightComparator());
 	}
@@ -50,6 +51,8 @@ public final class GdpPlannerFactory {
 		// Get the ground cost
 		double groundCost = Double.parseDouble(input.trim());
 		double airCost = Double.parseDouble(scanner.nextLine().trim());
+		double maxAirborne = Double.parseDouble(scanner.nextLine().trim());
+
 		String assignType = scanner.nextLine();
 		Comparator<Flight> myComparator;
 		if (assignType.equalsIgnoreCase("RBS")) {
@@ -62,7 +65,7 @@ public final class GdpPlannerFactory {
 		int minsPerPeriod = Integer.parseInt(scanner.nextLine().trim());
 		int gdpDuration = Integer.parseInt(scanner.nextLine().trim());
 
-		return new DirectHofkinModel(groundCost, airCost, Duration.standardMinutes(minsPerPeriod),
+		return new DirectHofkinModel(groundCost, airCost,maxAirborne, Duration.standardMinutes(minsPerPeriod),
 				new FixedDurationGDPIntervalChooser(Duration.standardMinutes(gdpDuration)), myComparator);
 	}
 
@@ -85,6 +88,8 @@ public final class GdpPlannerFactory {
 		// Get the ground cost
 		double groundCost = Double.parseDouble(input.trim());
 		double airCost = Double.parseDouble(scanner.nextLine().trim());
+		double maxAirborne = Double.parseDouble(scanner.nextLine().trim());
+
 		String assignType = scanner.nextLine();
 		Comparator<Flight> myComparator;
 		if (assignType.equalsIgnoreCase("RBS")) {
@@ -97,7 +102,7 @@ public final class GdpPlannerFactory {
 		int minsPerPeriod = Integer.parseInt(scanner.nextLine().trim());
 		int gdpDuration = Integer.parseInt(scanner.nextLine().trim());
 
-		HofkinModel myModel = new HofkinModel(groundCost, airCost);
+		HofkinModel myModel = new HofkinModel(groundCost, airCost,maxAirborne);
 
 		DefaultDiscretePAARChooserWrapper myPAARChooser = new DefaultDiscretePAARChooserWrapper(
 				Duration.standardMinutes(minsPerPeriod), myModel);

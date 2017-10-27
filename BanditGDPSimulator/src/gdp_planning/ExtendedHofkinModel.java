@@ -16,6 +16,9 @@ public class ExtendedHofkinModel {
 	private final double groundCost;
 	private final double airCost;
 	private final GRBEnv myEnv ;
+	private final double maxAirborne;
+	public static final double UNLIMITED = -1;
+
 	
 	/**
 	 * Standard constructor
@@ -23,9 +26,10 @@ public class ExtendedHofkinModel {
 	 * @param airCost - the cost of one time unit of air delay.
 	 * @throws GRBException 
 	 */
-	public ExtendedHofkinModel(double groundCost, double airCost) throws GRBException{
+	public ExtendedHofkinModel(double groundCost, double airCost,double maxAirborne) throws GRBException{
 		this.groundCost = groundCost;
 		this.airCost = airCost;
+		this.maxAirborne=maxAirborne;
 		this.myEnv = new GRBEnv("extendedHofkinLog.log");
 	}
 	
@@ -36,9 +40,10 @@ public class ExtendedHofkinModel {
 	 * @param string - the name of the log file.
 	 * @throws GRBException 
 	 */
-	public ExtendedHofkinModel(double groundCost, double airCost, String logFileName) throws GRBException{
+	public ExtendedHofkinModel(double groundCost, double airCost, double maxAirborne, String logFileName) throws GRBException{
 		this.groundCost = groundCost;
 		this.airCost = airCost;
+		this.maxAirborne = maxAirborne;
 		this.myEnv = new GRBEnv(logFileName);
 	}
 	
@@ -123,15 +128,15 @@ public class ExtendedHofkinModel {
 
 		
 		//Add variables which represent ground delay of flights
-			for(int j =0; j < numScenarios; j++){
-				double probability = scenarios.get(j).getProbability();
-				for(int i =0; i < numTimePeriods-1;i++){
-					for(int k = 0; k < numFlightTimes;k++){
-						 groundVar[i][j][k] = model.addVar(0.0, GRB.INFINITY, groundCost*probability,
-								GRB.INTEGER, "D"+i+","+j+","+k);
-					}
+		for(int j =0; j < numScenarios; j++){
+			double probability = scenarios.get(j).getProbability();
+			for(int i =0; i < numTimePeriods-1;i++){
+				for(int k = 0; k < numFlightTimes;k++){
+					 groundVar[i][j][k] = model.addVar(0.0, GRB.INFINITY, groundCost*probability,
+							GRB.INTEGER, "D"+i+","+j+","+k);
 				}
 			}
+		}
 		
 		//Add variables which represent flights flying to the destination
 		for(int k = 0; k < numFlightTimes;k++){
@@ -146,9 +151,14 @@ public class ExtendedHofkinModel {
 		//Add variables which represent air delays 
 		for(int j = 0; j < numScenarios; j++){
 			double probability = scenarios.get(j).getProbability();
-			for(int i =0; i < numTimePeriods-1; i++){		
-				airVar[i][j] = model.addVar(0.0, GRB.INFINITY, airCost*probability,
-						GRB.INTEGER, "A"+i+","+j);
+			for(int i =0; i < numTimePeriods-1; i++){
+				if(maxAirborne != UNLIMITED){
+					airVar[i][j] = model.addVar(0.0, maxAirborne, airCost*probability,
+							GRB.INTEGER, "A"+i+","+j);
+				}else{
+					airVar[i][j] = model.addVar(0.0, GRB.INFINITY, airCost*probability,
+							GRB.INTEGER, "A"+i+","+j);
+				}
 			}
 		}
 		model.update();
@@ -180,7 +190,8 @@ public class ExtendedHofkinModel {
 		for(int j =0; j < numScenarios;j++){
 			DiscreteCapacityScenario currentScenario = scenarios.get(j);
 
-			for(int i =0;i < numTimePeriods;i++){
+			double excessFlights =0.0;
+			for(int i =0;i < numTimePeriods-1;i++){
 				GRBLinExpr inFlow = new GRBLinExpr();
 				for(int k =0; k < numFlightTimes; k++){
 					int flightTime = flightTimes.get(k);
@@ -191,7 +202,13 @@ public class ExtendedHofkinModel {
 				if(i > 0){
 					inFlow.addTerm(1.0, airVar[i-1][j]);
 				}
-				double capacity = currentScenario.getCapacity().get(i)-exemptFlights.get(i);
+				double capacity = currentScenario.getCapacity().get(i)-exemptFlights.get(i)-excessFlights;
+				if(capacity < 0.0){
+					excessFlights = -capacity;
+					capacity=0.0;
+				}else{
+					excessFlights=0.0;
+				}
 				GRBLinExpr outFlow = new GRBLinExpr();
 				outFlow.addConstant(capacity);
 				if(i < numTimePeriods - 1){
@@ -200,6 +217,7 @@ public class ExtendedHofkinModel {
 				model.addConstr(inFlow, GRB.LESS_EQUAL,outFlow,"AF"+i+","+j);
 			}
 		}
+		
 		//Add anti-anticipatory constraints
 		Iterator<Set<Set<Integer>>> partitionIter = scenarioPartition.iterator();
 		int time = 0;
