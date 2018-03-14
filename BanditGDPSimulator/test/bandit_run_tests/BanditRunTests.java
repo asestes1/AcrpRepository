@@ -472,6 +472,7 @@ public class BanditRunTests {
 		}
 	}
 
+	/*
 	private List<SimilarityBanditSolver> makeTmiTunedListSolvers(int numRun, int numHistory) {
 		List<SimilarityBanditSolver> mySolvers = new ArrayList<SimilarityBanditSolver>();
 		BiFunction<SimpleTmiAction, SimpleTmiAction, Double> tmiComparerForZoom = GaussianTmiComparerFactory
@@ -500,6 +501,7 @@ public class BanditRunTests {
 		mySolvers.add(myRandomSolver);
 		return mySolvers;
 	}
+	*/
 	
 	private List<SimilarityBanditSolver> makeBothTunedListSolvers(int numRun, int numHistory) {
 		List<SimilarityBanditSolver> mySolvers = new ArrayList<SimilarityBanditSolver>();
@@ -520,9 +522,9 @@ public class BanditRunTests {
 		GpTsSolver myGpTsSolver = new GpTsSolver(
 				SimilarityGpFactory.makeConstantPriorSimilarityGpProcess(mean, priorCov, 2.0), 10.0);
 		RandomHistoryBanditSolver myRandomSolver = new RandomHistoryBanditSolver();
-		//mySolvers.add(myDoNothingSolver);
-		//mySolvers.add(myGreedyAvgSolver);
-		//mySolvers.add(myZoomSolver);
+		mySolvers.add(myDoNothingSolver);
+		mySolvers.add(myGreedyAvgSolver);
+		mySolvers.add(myZoomSolver);
 		mySolvers.add(myGreedySolver);
 		mySolvers.add(myGpUcbSolver);
 		mySolvers.add(myGpTsSolver);

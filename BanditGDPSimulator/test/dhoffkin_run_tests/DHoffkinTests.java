@@ -27,7 +27,6 @@ import org.junit.Test;
 
 import state_criteria.AllLandedCriteria;
 import state_criteria.AlwaysCriteria;
-import state_criteria.AtStartCriteriaFactory;
 import state_criteria.PeriodicCriteria;
 import state_criteria.StateCriteria;
 import state_factories.CapacityScenarioFactory;
